@@ -45,15 +45,36 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     }
   }
 
-  let html = '<h1>Processed Files</h1><ul>';
-  for (const result of results) {
-    if (result.error) {
-      html += `<li>${result.name}: Error - ${result.error}</li>`;
-    } else {
-      html += `<li><a href="${result.svgPath}" target="_blank">${result.name}</a></li>`;
+  let html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Processed Files</title>
+      <link rel="stylesheet" href="/styles.css">
+    </head>
+    <body>
+      <h1>Processed Files</h1>
+      <ul>
+    `;
+    
+    for (const result of results) {
+      if (result.error) {
+        html += `<li>${result.name}: Error - ${result.error}</li>`;
+      } else {
+        html += `<li><a href="${result.svgPath}" target="_blank">${result.name}</a></li>`;
+      }
     }
-  }
-  html += '</ul><a href="/">Upload More</a>';
+    
+    html += `
+      </ul>
+      <div class="back-link">
+        <a href="/">Upload More</a>
+      </div>
+    </body>
+    </html>
+    `;
+
 
   res.send(html);
 });
