@@ -89,78 +89,11 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    // const addEdge = (from, to, label = '') => {
-    //   const key = `${from}->${to}`;
-    //   if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-    //   edgeMap.get(key).add(label || '');
-    // };
-    // const addEdge = (from, to, attrs = {}) => {
-    //   const key = `${from}->${to}`;
-    //   if (!edgeMap.has(key)) edgeMap.set(key, []);
-    //   edgeMap.get(key).push(attrs);
-    // };
-    // const addEdge = (from, to, newAttrs = {}) => {
-    //   const key = `${from}->${to}`;
-    //   const existing = edgeMap.get(key);
-    
-    //   if (!existing) {
-    //     edgeMap.set(key, { ...newAttrs });
-    //   } else {
-    //     // Merge: prefer label EXCEPTION, color red, style dashed
-    //     const merged = {
-    //       label: existing.label || newAttrs.label,
-    //       color: existing.color || newAttrs.color,
-    //       style: existing.style || newAttrs.style
-    //     };
-    //     edgeMap.set(key, merged);
-    //   }
-    // };
-    // const addEdge = (from, to, newAttrs = {}) => {
-    //   const key = `${from}->${to}`;
-    //   const existing = edgeMap.get(key);
-    
-    //   if (!existing) {
-    //     edgeMap.set(key, { ...newAttrs });
-    //   } else {
-    //     const merged = {
-    //       label: existing.label || newAttrs.label, // Preserve first non-empty label
-    //       color: newAttrs.label === "EXCEPTION" ? newAttrs.color || existing.color : existing.color,
-    //       style: newAttrs.label === "EXCEPTION" ? newAttrs.style || existing.style : existing.style
-    //     };
-    //     edgeMap.set(key, merged);
-    //   }
-    // };
-    const addEdge = (from, to, newAttrs = {}) => {
+    const addEdge = (from, to, label = '') => {
       const key = `${from}->${to}`;
-      const existing = edgeMap.get(key);
-    
-      if (!existing) {
-        edgeMap.set(key, { ...newAttrs });
-      } else {
-        // If existing label and new label are both present and different, combine them
-        let combinedLabel = existing.label || "";
-        if (newAttrs.label && newAttrs.label !== existing.label) {
-          if (combinedLabel.length > 0) {
-            combinedLabel += " / " + newAttrs.label;
-          } else {
-            combinedLabel = newAttrs.label;
-          }
-        }
-    
-        // Style and color: override only if EXCEPTION
-        const merged = {
-          label: combinedLabel,
-          color: (newAttrs.label === "EXCEPTION") ? newAttrs.color || existing.color : existing.color,
-          style: (newAttrs.label === "EXCEPTION") ? newAttrs.style || existing.style : existing.style
-        };
-    
-        edgeMap.set(key, merged);
-      }
+      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+      edgeMap.get(key).add(label || '');
     };
-
-
-
-
   
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -176,22 +109,9 @@ async function parseAndRenderXML(xml, outputPath) {
           addEdge(asc, id);
         });
 
-        // if (mod.singleDescendant?.[0]) {
-        //   addEdge(id, mod.singleDescendant[0]);
-        // }
-
-        // if (mod.exceptionalDescendant?.[0]) {
-        //   addEdge(id, mod.exceptionalDescendant[0], { label: "EXCEPTION", color: "red", style: "dashed" });
-        // }
-
         if (mod.singleDescendant?.[0]) {
-          addEdge(id, mod.singleDescendant[0], { label: "", color: "black" });
+          addEdge(id, mod.singleDescendant[0]);
         }
-        
-        if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], { label: "EXCEPTION", color: "red", style: "dashed" });
-        }
-
 
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
@@ -227,35 +147,13 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
 
-    // for (const [key, labels] of edgeMap.entries()) {
-    //   const [from, to] = key.split('->');
-    //   const labelArr = Array.from(labels).filter(Boolean);
-    //   const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
-    //   const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-    //   dot += `  "${from}" -> "${to}"${attrString};\n`;
-    // }
-    // for (const [key, attrList] of edgeMap.entries()) {
-    //   const [from, to] = key.split('->');
-    //   for (const attrs of attrList) {
-    //     const attrParts = [];
-    //     if (attrs.label) attrParts.push(`label="${attrs.label}"`);
-    //     if (attrs.color) attrParts.push(`color="${attrs.color}"`);
-    //     if (attrs.style) attrParts.push(`style="${attrs.style}"`);
-    //     const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
-    //     dot += `  "${from}" -> "${to}"${attrString};\n`;
-    //   }
-    // }
-    for (const [key, attrs] of edgeMap.entries()) {
+    for (const [key, labels] of edgeMap.entries()) {
       const [from, to] = key.split('->');
-      const attrParts = [];
-      if (attrs.label) attrParts.push(`label="${attrs.label}"`);
-      if (attrs.color) attrParts.push(`color="${attrs.color}"`);
-      if (attrs.style) attrParts.push(`style="${attrs.style}"`);
-      const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
+      const labelArr = Array.from(labels).filter(Boolean);
+      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
       dot += `  "${from}" -> "${to}"${attrString};\n`;
     }
-
-
     
     dot += '}';
 
