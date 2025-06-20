@@ -32,7 +32,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     try {
       console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
-      const timestamp = Date.now();
+      const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
       const outputFilename = `${file.originalname}_${timestamp}.svg`;
       const outputPath = `public/${outputFilename}`;
       await parseAndRenderXML(xml, outputPath);
@@ -74,8 +74,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     </body>
     </html>
     `;
-
-
   res.send(html);
 });
 
@@ -91,11 +89,17 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    const addEdge = (from, to, label = '') => {
+    // const addEdge = (from, to, label = '') => {
+    //   const key = `${from}->${to}`;
+    //   if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+    //   edgeMap.get(key).add(label || '');
+    // };
+    const addEdge = (from, to, attrs = {}) => {
       const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-      edgeMap.get(key).add(label || '');
+      if (!edgeMap.has(key)) edgeMap.set(key, []);
+      edgeMap.get(key).push(attrs);
     };
+
 
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -106,28 +110,7 @@ async function parseAndRenderXML(xml, outputPath) {
         const displayName = name.replace(/"/g, '');
         const tagLabel = modType;
         idToLabel[id] = `${tagLabel}\\n${displayName}`;
-        // idToLabel[id] = `<
-        //   <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
-        //     <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
-        //     <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
-        //   </TABLE>
-        // >`;
-//         const escapeHTML = str =>
-//   str.replace(/[<>&"]/g, s => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]));
-
-// const safeName = escapeHTML(displayName);
-// const safeTag = escapeHTML(tagLabel);
-
-// idToLabel[id] = `<
-//   <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
-//     <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
-//     <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
-//   </TABLE>
-// >`;
-
-
-
-
+        
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
         });
@@ -136,16 +119,31 @@ async function parseAndRenderXML(xml, outputPath) {
           addEdge(id, mod.singleDescendant[0]);
         }
 
+        // if (modType === 'ifElse') {
+        //   const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+        //   for (const entry of entries) {
+        //     const key = entry.key?.[0];
+        //     const desc = entry.value?.[0]?.desc?.[0];
+        //     if (key && desc) {
+        //       addEdge(id, desc, key.toUpperCase());
+        //     }
+        //   }
+        // }
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
-            const key = entry.key?.[0];
+            const key = entry.key?.[0]?.toLowerCase();
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              addEdge(id, desc, key.toUpperCase());
+              let label = key.toUpperCase();
+              let color = undefined;
+              if (key === 'if') color = 'blue';
+              else if (key === 'else') color = 'lightgreen';
+              addEdge(id, desc, { label, color });
             }
           }
         }
+
 
         if (modType === 'case') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
@@ -164,29 +162,30 @@ async function parseAndRenderXML(xml, outputPath) {
       }
     }
 
-    // for (const [id, label] of Object.entries(idToLabel)) {
-    //   if (label.trim().startsWith('<')) {
-    //     // HTML-like label, no quotes
-    //     dot += `  "${id}" [label=${label}];\n`;
-    //   } else {
-    //     // Plain text label, escape double quotes
-    //     const safeLabel = label.replace(/"/g, '\\"');
-    //     dot += `  "${id}" [label="${safeLabel}"];\n`;
-    //   }
-    // }
     for (const [id, label] of Object.entries(idToLabel)) {
       const safeLabel = label.replace(/"/g, '\\"');
       dot += `  "${id}" [label="${safeLabel}"];\n`;
     }
 
 
-    for (const [key, labels] of edgeMap.entries()) {
+    // for (const [key, labels] of edgeMap.entries()) {
+    //   const [from, to] = key.split('->');
+    //   const labelArr = Array.from(labels).filter(Boolean);
+    //   const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+    //   const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+    //   dot += `  "${from}" -> "${to}"${attrString};\n`;
+    // }
+    for (const [key, attrList] of edgeMap.entries()) {
       const [from, to] = key.split('->');
-      const labelArr = Array.from(labels).filter(Boolean);
-      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
-      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${from}" -> "${to}"${attrString};\n`;
+      for (const attrs of attrList) {
+        const attrParts = [];
+        if (attrs.label) attrParts.push(`label="${attrs.label}"`);
+        if (attrs.color) attrParts.push(`color="${attrs.color}"`);
+        const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
+        dot += `  "${from}" -> "${to}"${attrString};\n`;
+      }
     }
+
 
     dot += '}';
 
