@@ -79,11 +79,15 @@ async function parseAndRenderXML(xml, outputPath) {
         idToLabel[id] = name.replace(/"/g, '');
 
         const addEdge = (from, to, label = '', color = '') => {
-          const key = `${from}->${to}`;
-          if (!edgeMap.has(key)) {
-            edgeMap.set(key, { from, to, label, color });
-          }
-        };
+  const key = `${from}->${to}`;
+  if (!edgeMap.has(key)) {
+    edgeMap.set(key, { from, to, label, color });
+  } else if (label || color) {
+    const existing = edgeMap.get(key);
+    if (label) existing.label = label;
+    if (color) existing.color = color;
+  }
+};
 
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
