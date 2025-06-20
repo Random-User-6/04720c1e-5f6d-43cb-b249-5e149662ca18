@@ -71,23 +71,19 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
+    const addEdge = (from, to, label = '', color = '') => {
+      const key = `${from}->${to}`;
+      const variant = label + '::' + color;
+      if (!edgeMap.has(key)) edgeMap.set(key, new Map());
+      edgeMap.get(key).set(variant, { from, to, label, color });
+    };
+
     for (const modType in modules) {
       for (const mod of modules[modType]) {
         const id = mod.moduleId?.[0];
         const name = mod.moduleName?.[0] || modType;
         if (!id) continue;
         idToLabel[id] = name.replace(/"/g, '');
-
-        const addEdge = (from, to, label = '', color = '') => {
-  const key = `${from}->${to}`;
-  if (!edgeMap.has(key)) {
-    edgeMap.set(key, { from, to, label, color });
-  } else if (label || color) {
-    const existing = edgeMap.get(key);
-    if (label) existing.label = label;
-    if (color) existing.color = color;
-  }
-};
 
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
@@ -131,12 +127,14 @@ async function parseAndRenderXML(xml, outputPath) {
       dot += `  "${id}" [label="${label}"];\n`;
     }
 
-    for (const edge of edgeMap.values()) {
-      const attrs = [];
-      if (edge.label) attrs.push(`label=\"${edge.label}\"`);
-      if (edge.color) attrs.push(`color=${edge.color}`);
-      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${edge.from}" -> "${edge.to}"${attrString};\n`;
+    for (const edgeVariants of edgeMap.values()) {
+      for (const edge of edgeVariants.values()) {
+        const attrs = [];
+        if (edge.label) attrs.push(`label=\"${edge.label}\"`);
+        if (edge.color) attrs.push(`color=${edge.color}`);
+        const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+        dot += `  "${edge.from}" -> "${edge.to}"${attrString};\n`;
+      }
     }
 
     dot += '}';
