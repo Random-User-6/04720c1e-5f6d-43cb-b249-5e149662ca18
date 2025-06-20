@@ -84,7 +84,13 @@ async function parseAndRenderXML(xml, outputPath) {
 
         const displayName = name.replace(/"/g, '');
         const tagLabel = modType;
-        idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;
+        /* idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;*/
+        idToLabel[id] = `<
+          <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
+            <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
+          </TABLE>
+        >`;
 
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
