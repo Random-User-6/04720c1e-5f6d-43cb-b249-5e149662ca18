@@ -34,9 +34,11 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     try {
       console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
-      const outputPath = `public/${file.originalname}.svg`;
+      const timestamp = Date.now();
+      const outputFilename = `${file.originalname}_${timestamp}.svg`;
+      const outputPath = `public/${outputFilename}`;
       await parseAndRenderXML(xml, outputPath);
-      results.push({ name: file.originalname, svgPath: `/${file.originalname}.svg` });
+      results.push({ name: file.originalname, svgPath: `/${outputFilename}` });
     } catch (e) {
       console.error('Error in parseAndRenderXML:', e);
       results.push({ name: file.originalname || file.filename, error: e.message });
@@ -72,15 +74,13 @@ async function parseAndRenderXML(xml, outputPath) {
     const edgeMap = new Map();
 
     const addEdge = (from, to, label = '', color = '') => {
-    const key = `${from}->${to}`;
-    const variantKey = `${label}::${color}`;
-    if (!edgeMap.has(key)) edgeMap.set(key, new Map());
-    const edgeSet = edgeMap.get(key);
-    if (!edgeSet.has(variantKey)) {
-      edgeSet.set(variantKey, { from, to, label, color });
-    }
-  };
-
+  const key = `${from}->${to}`;
+  if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+  const existingVariants = edgeMap.get(key);
+  if (![...existingVariants].some(e => e.label === label && e.color === color)) {
+    existingVariants.add({ from, to, label, color });
+  }
+};
 
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -132,7 +132,7 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
     for (const edgeVariants of edgeMap.values()) {
-      for (const edge of edgeVariants.values()) {
+  for (const edge of edgeVariants) {
         const attrs = [];
         if (edge.label) attrs.push(`label=\"${edge.label}\"`);
         if (edge.color) attrs.push(`color=${edge.color}`);
