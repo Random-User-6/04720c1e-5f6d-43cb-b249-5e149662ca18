@@ -25,22 +25,24 @@ app.get('/', (req, res) => {
 
 // Handle file uploads
 app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
-  /**/
-  console.log('FILES:', req.files);
-  /**/
-  
   const results = [];
 
+  if (!req.files || !Array.isArray(req.files)) {
+    return res.send("No files uploaded or req.files is not an array.");
+  }
+
   for (const file of req.files) {
-    const xml = fs.readFileSync(file.path, 'utf8');
-    const outputPath = `public/${file.originalname}.svg`;
     try {
+      console.log("Processing file:", file.originalname);
+      const xml = fs.readFileSync(file.path, 'utf8');
+      const outputPath = `public/${file.originalname}.svg`;
       await parseAndRenderXML(xml, outputPath);
       results.push({ name: file.originalname, svgPath: `/${file.originalname}.svg` });
     } catch (e) {
-      results.push({ name: file.originalname, error: e.message });
+      results.push({ name: file.originalname || file.filename, error: e.message });
+    } finally {
+      fs.unlinkSync(file.path); // Clean up temp file
     }
-    fs.unlinkSync(file.path); // Clean up temp file
   }
 
   let html = '<h1>Processed Files</h1><ul>';
@@ -55,6 +57,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   res.send(html);
 });
+
 
 // XML parsing and SVG rendering logic
 async function parseAndRenderXML(xml, outputPath) {
