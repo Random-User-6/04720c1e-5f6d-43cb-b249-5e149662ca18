@@ -94,11 +94,28 @@ async function parseAndRenderXML(xml, outputPath) {
     //   if (!edgeMap.has(key)) edgeMap.set(key, new Set());
     //   edgeMap.get(key).add(label || '');
     // };
-    const addEdge = (from, to, attrs = {}) => {
+    // const addEdge = (from, to, attrs = {}) => {
+    //   const key = `${from}->${to}`;
+    //   if (!edgeMap.has(key)) edgeMap.set(key, []);
+    //   edgeMap.get(key).push(attrs);
+    // };
+    const addEdge = (from, to, newAttrs = {}) => {
       const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, []);
-      edgeMap.get(key).push(attrs);
+      const existing = edgeMap.get(key);
+    
+      if (!existing) {
+        edgeMap.set(key, { ...newAttrs });
+      } else {
+        // Merge: prefer label EXCEPTION, color red, style dashed
+        const merged = {
+          label: existing.label || newAttrs.label,
+          color: existing.color || newAttrs.color,
+          style: existing.style || newAttrs.style
+        };
+        edgeMap.set(key, merged);
+      }
     };
+
 
   
     for (const modType in modules) {
@@ -115,13 +132,22 @@ async function parseAndRenderXML(xml, outputPath) {
           addEdge(asc, id);
         });
 
-        if (mod.singleDescendant?.[0]) {
-          addEdge(id, mod.singleDescendant[0]);
-        }
+        // if (mod.singleDescendant?.[0]) {
+        //   addEdge(id, mod.singleDescendant[0]);
+        // }
 
+        // if (mod.exceptionalDescendant?.[0]) {
+        //   addEdge(id, mod.exceptionalDescendant[0], { label: "EXCEPTION", color: "red", style: "dashed" });
+        // }
+
+        if (mod.singleDescendant?.[0]) {
+          addEdge(id, mod.singleDescendant[0], { label: "", color: "black" });
+        }
+        
         if (mod.exceptionalDescendant?.[0]) {
           addEdge(id, mod.exceptionalDescendant[0], { label: "EXCEPTION", color: "red", style: "dashed" });
         }
+
 
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
@@ -164,17 +190,27 @@ async function parseAndRenderXML(xml, outputPath) {
     //   const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
     //   dot += `  "${from}" -> "${to}"${attrString};\n`;
     // }
-    for (const [key, attrList] of edgeMap.entries()) {
+    // for (const [key, attrList] of edgeMap.entries()) {
+    //   const [from, to] = key.split('->');
+    //   for (const attrs of attrList) {
+    //     const attrParts = [];
+    //     if (attrs.label) attrParts.push(`label="${attrs.label}"`);
+    //     if (attrs.color) attrParts.push(`color="${attrs.color}"`);
+    //     if (attrs.style) attrParts.push(`style="${attrs.style}"`);
+    //     const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
+    //     dot += `  "${from}" -> "${to}"${attrString};\n`;
+    //   }
+    // }
+    for (const [key, attrs] of edgeMap.entries()) {
       const [from, to] = key.split('->');
-      for (const attrs of attrList) {
-        const attrParts = [];
-        if (attrs.label) attrParts.push(`label="${attrs.label}"`);
-        if (attrs.color) attrParts.push(`color="${attrs.color}"`);
-        if (attrs.style) attrParts.push(`style="${attrs.style}"`);
-        const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
-        dot += `  "${from}" -> "${to}"${attrString};\n`;
-      }
+      const attrParts = [];
+      if (attrs.label) attrParts.push(`label="${attrs.label}"`);
+      if (attrs.color) attrParts.push(`color="${attrs.color}"`);
+      if (attrs.style) attrParts.push(`style="${attrs.style}"`);
+      const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
+      dot += `  "${from}" -> "${to}"${attrString};\n`;
     }
+
 
     
     dot += '}';
