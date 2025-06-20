@@ -6,7 +6,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { parseStringPromise } = require('xml2js');
-const { default: Viz } = require('viz.js');
+const Viz = require('viz.js');
 const { Module, render } = require('viz.js/full.render.js');
 
 const app = express();
@@ -124,7 +124,7 @@ async function parseAndRenderXML(xml, outputPath) {
 
     dot += '}';
 
-    const viz = new Viz({ Module, render });
+    const viz = await Viz({ Module, render });
     const svg = await viz.renderString(dot);
     fs.writeFileSync(outputPath, svg, 'utf8');
   } catch (err) {
