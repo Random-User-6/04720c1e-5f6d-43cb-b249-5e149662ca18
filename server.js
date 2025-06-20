@@ -99,6 +99,22 @@ async function parseAndRenderXML(xml, outputPath) {
     //   if (!edgeMap.has(key)) edgeMap.set(key, []);
     //   edgeMap.get(key).push(attrs);
     // };
+    // const addEdge = (from, to, newAttrs = {}) => {
+    //   const key = `${from}->${to}`;
+    //   const existing = edgeMap.get(key);
+    
+    //   if (!existing) {
+    //     edgeMap.set(key, { ...newAttrs });
+    //   } else {
+    //     // Merge: prefer label EXCEPTION, color red, style dashed
+    //     const merged = {
+    //       label: existing.label || newAttrs.label,
+    //       color: existing.color || newAttrs.color,
+    //       style: existing.style || newAttrs.style
+    //     };
+    //     edgeMap.set(key, merged);
+    //   }
+    // };
     const addEdge = (from, to, newAttrs = {}) => {
       const key = `${from}->${to}`;
       const existing = edgeMap.get(key);
@@ -106,15 +122,15 @@ async function parseAndRenderXML(xml, outputPath) {
       if (!existing) {
         edgeMap.set(key, { ...newAttrs });
       } else {
-        // Merge: prefer label EXCEPTION, color red, style dashed
         const merged = {
-          label: existing.label || newAttrs.label,
-          color: existing.color || newAttrs.color,
-          style: existing.style || newAttrs.style
+          label: existing.label || newAttrs.label, // Preserve first non-empty label
+          color: newAttrs.label === "EXCEPTION" ? newAttrs.color || existing.color : existing.color,
+          style: newAttrs.label === "EXCEPTION" ? newAttrs.style || existing.style : existing.style
         };
         edgeMap.set(key, merged);
       }
     };
+
 
 
   
