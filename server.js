@@ -25,6 +25,10 @@ app.get('/', (req, res) => {
 
 // Handle file uploads
 app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
+  /**/
+  console.log('FILES:', req.files);
+  /**/
+  
   const results = [];
 
   for (const file of req.files) {
