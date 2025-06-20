@@ -124,7 +124,7 @@ async function parseAndRenderXML(xml, outputPath) {
 
     dot += '}';
 
-    const viz = await Viz({ Module, render });
+    const viz = new Viz({ Module, render });
     const svg = await viz.renderString(dot);
     fs.writeFileSync(outputPath, svg, 'utf8');
   } catch (err) {
