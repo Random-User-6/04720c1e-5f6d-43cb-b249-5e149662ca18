@@ -1,4 +1,3 @@
-gold
 // Required packages:
 // npm install express multer xml2js viz.js
 
