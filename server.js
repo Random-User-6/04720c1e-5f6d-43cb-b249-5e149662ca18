@@ -89,18 +89,12 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    // const addEdge = (from, to, label = '') => {
-    //   const key = `${from}->${to}`;
-    //   if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-    //   edgeMap.get(key).add(label || '');
-    // };
-    const addEdge = (from, to, attrs = {}) => {
+    const addEdge = (from, to, label = '') => {
       const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, []);
-      edgeMap.get(key).push(attrs);
+      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+      edgeMap.get(key).add(label || '');
     };
-
-
+  
     for (const modType in modules) {
       for (const mod of modules[modType]) {
         const id = mod.moduleId?.[0];
@@ -119,32 +113,17 @@ async function parseAndRenderXML(xml, outputPath) {
           addEdge(id, mod.singleDescendant[0]);
         }
 
-        // if (modType === 'ifElse') {
-        //   const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-        //   for (const entry of entries) {
-        //     const key = entry.key?.[0];
-        //     const desc = entry.value?.[0]?.desc?.[0];
-        //     if (key && desc) {
-        //       addEdge(id, desc, key.toUpperCase());
-        //     }
-        //   }
-        // }
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
-            const key = entry.key?.[0]?.toLowerCase();
+            const key = entry.key?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              let label = key.toUpperCase();
-              let color = undefined;
-              if (key === 'if') color = 'blue';
-              else if (key === 'else') color = 'lightgreen';
-              addEdge(id, desc, { label, color });
+              addEdge(id, desc, key.toUpperCase());
             }
           }
         }
-
-
+        
         if (modType === 'case') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
@@ -168,25 +147,14 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
 
-    // for (const [key, labels] of edgeMap.entries()) {
-    //   const [from, to] = key.split('->');
-    //   const labelArr = Array.from(labels).filter(Boolean);
-    //   const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
-    //   const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-    //   dot += `  "${from}" -> "${to}"${attrString};\n`;
-    // }
-    for (const [key, attrList] of edgeMap.entries()) {
+    for (const [key, labels] of edgeMap.entries()) {
       const [from, to] = key.split('->');
-      for (const attrs of attrList) {
-        const attrParts = [];
-        if (attrs.label) attrParts.push(`label="${attrs.label}"`);
-        if (attrs.color) attrParts.push(`color="${attrs.color}"`);
-        const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
-        dot += `  "${from}" -> "${to}"${attrString};\n`;
-      }
+      const labelArr = Array.from(labels).filter(Boolean);
+      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+      dot += `  "${from}" -> "${to}"${attrString};\n`;
     }
-
-
+    
     dot += '}';
 
     const viz = new Viz({ Module, render });
