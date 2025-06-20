@@ -91,11 +91,7 @@ async function parseAndRenderXML(xml, outputPath) {
         //     <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
         //   </TABLE>
         // >`;
-        const safeDisplayName = displayName.replace(/[<>&"]/g, s => (
-  { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]
-));
-
-const escapeHTML = str =>
+        const escapeHTML = str =>
   str.replace(/[<>&"]/g, s => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]));
 
 const safeName = escapeHTML(displayName);
@@ -103,8 +99,8 @@ const safeTag = escapeHTML(tagLabel);
 
 idToLabel[id] = `<
   <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
-    <TR><TD ALIGN="LEFT" PORT="tag" FIXEDSIZE="FALSE"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
-    <TR><TD ALIGN="LEFT" PORT="name" FIXEDSIZE="FALSE"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT">&lt;${safeTag}&gt;</TD></TR>
+    <TR><TD ALIGN="LEFT">${safeName}</TD></TR>
   </TABLE>
 >`;
 
