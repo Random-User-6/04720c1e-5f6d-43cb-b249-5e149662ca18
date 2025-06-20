@@ -115,6 +115,21 @@ async function parseAndRenderXML(xml, outputPath) {
     //     edgeMap.set(key, merged);
     //   }
     // };
+    // const addEdge = (from, to, newAttrs = {}) => {
+    //   const key = `${from}->${to}`;
+    //   const existing = edgeMap.get(key);
+    
+    //   if (!existing) {
+    //     edgeMap.set(key, { ...newAttrs });
+    //   } else {
+    //     const merged = {
+    //       label: existing.label || newAttrs.label, // Preserve first non-empty label
+    //       color: newAttrs.label === "EXCEPTION" ? newAttrs.color || existing.color : existing.color,
+    //       style: newAttrs.label === "EXCEPTION" ? newAttrs.style || existing.style : existing.style
+    //     };
+    //     edgeMap.set(key, merged);
+    //   }
+    // };
     const addEdge = (from, to, newAttrs = {}) => {
       const key = `${from}->${to}`;
       const existing = edgeMap.get(key);
@@ -122,14 +137,27 @@ async function parseAndRenderXML(xml, outputPath) {
       if (!existing) {
         edgeMap.set(key, { ...newAttrs });
       } else {
+        // If existing label and new label are both present and different, combine them
+        let combinedLabel = existing.label || "";
+        if (newAttrs.label && newAttrs.label !== existing.label) {
+          if (combinedLabel.length > 0) {
+            combinedLabel += " / " + newAttrs.label;
+          } else {
+            combinedLabel = newAttrs.label;
+          }
+        }
+    
+        // Style and color: override only if EXCEPTION
         const merged = {
-          label: existing.label || newAttrs.label, // Preserve first non-empty label
-          color: newAttrs.label === "EXCEPTION" ? newAttrs.color || existing.color : existing.color,
-          style: newAttrs.label === "EXCEPTION" ? newAttrs.style || existing.style : existing.style
+          label: combinedLabel,
+          color: (newAttrs.label === "EXCEPTION") ? newAttrs.color || existing.color : existing.color,
+          style: (newAttrs.label === "EXCEPTION") ? newAttrs.style || existing.style : existing.style
         };
+    
         edgeMap.set(key, merged);
       }
     };
+
 
 
 
