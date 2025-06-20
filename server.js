@@ -81,7 +81,10 @@ async function parseAndRenderXML(xml, outputPath) {
         const id = mod.moduleId?.[0];
         const name = mod.moduleName?.[0] || modType;
         if (!id) continue;
-        idToLabel[id] = name.replace(/"/g, '');
+
+        const displayName = name.replace(/"/g, '');
+        const tagLabel = modType;
+        idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;
 
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
