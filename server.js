@@ -73,13 +73,7 @@ async function parseAndRenderXML(xml, outputPath) {
     const addEdge = (from, to, label = '') => {
       const key = `${from}->${to}`;
       if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-      const existingVariants = edgeMap.get(key);
-
-      for (const e of existingVariants) {
-        if (e.label === label) return;
-      }
-
-      existingVariants.add({ from, to, label });
+      edgeMap.get(key).add(label || '');
     };
 
     for (const modType in modules) {
@@ -129,13 +123,12 @@ async function parseAndRenderXML(xml, outputPath) {
       dot += `  "${id}" [label="${label}"];\n`;
     }
 
-    for (const edgeVariants of edgeMap.values()) {
-      for (const edge of edgeVariants) {
-        const attrs = [];
-        if (edge.label) attrs.push(`label=\"${edge.label}\"`);
-        const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-        dot += `  "${edge.from}" -> "${edge.to}"${attrString};\n`;
-      }
+    for (const [key, labels] of edgeMap.entries()) {
+      const [from, to] = key.split('->');
+      const labelArr = Array.from(labels).filter(Boolean);
+      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+      dot += `  "${from}" -> "${to}"${attrString};\n`;
     }
 
     dot += '}';
