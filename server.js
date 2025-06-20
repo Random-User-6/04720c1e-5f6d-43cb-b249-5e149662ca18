@@ -89,11 +89,17 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    const addEdge = (from, to, label = '') => {
+    // const addEdge = (from, to, label = '') => {
+    //   const key = `${from}->${to}`;
+    //   if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+    //   edgeMap.get(key).add(label || '');
+    // };
+    const addEdge = (from, to, attrs = {}) => {
       const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-      edgeMap.get(key).add(label || '');
+      if (!edgeMap.has(key)) edgeMap.set(key, []);
+      edgeMap.get(key).push(attrs);
     };
+
   
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -151,13 +157,25 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
 
-    for (const [key, labels] of edgeMap.entries()) {
+    // for (const [key, labels] of edgeMap.entries()) {
+    //   const [from, to] = key.split('->');
+    //   const labelArr = Array.from(labels).filter(Boolean);
+    //   const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+    //   const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+    //   dot += `  "${from}" -> "${to}"${attrString};\n`;
+    // }
+    for (const [key, attrList] of edgeMap.entries()) {
       const [from, to] = key.split('->');
-      const labelArr = Array.from(labels).filter(Boolean);
-      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
-      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${from}" -> "${to}"${attrString};\n`;
+      for (const attrs of attrList) {
+        const attrParts = [];
+        if (attrs.label) attrParts.push(`label="${attrs.label}"`);
+        if (attrs.color) attrParts.push(`color="${attrs.color}"`);
+        if (attrs.style) attrParts.push(`style="${attrs.style}"`);
+        const attrString = attrParts.length ? ` [${attrParts.join(', ')}]` : '';
+        dot += `  "${from}" -> "${to}"${attrString};\n`;
+      }
     }
+
     
     dot += '}';
 
