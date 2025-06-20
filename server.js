@@ -84,7 +84,7 @@ async function parseAndRenderXML(xml, outputPath) {
 
         const displayName = name.replace(/"/g, '');
         const tagLabel = modType;
-         idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;
+        idToLabel[id] = `${tagLabel}\\n${displayName}`;
         // idToLabel[id] = `<
         //   <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
         //     <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
@@ -143,15 +143,19 @@ async function parseAndRenderXML(xml, outputPath) {
       }
     }
 
+    // for (const [id, label] of Object.entries(idToLabel)) {
+    //   if (label.trim().startsWith('<')) {
+    //     // HTML-like label, no quotes
+    //     dot += `  "${id}" [label=${label}];\n`;
+    //   } else {
+    //     // Plain text label, escape double quotes
+    //     const safeLabel = label.replace(/"/g, '\\"');
+    //     dot += `  "${id}" [label="${safeLabel}"];\n`;
+    //   }
+    // }
     for (const [id, label] of Object.entries(idToLabel)) {
-      if (label.trim().startsWith('<')) {
-        // HTML-like label, no quotes
-        dot += `  "${id}" [label=${label}];\n`;
-      } else {
-        // Plain text label, escape double quotes
-        const safeLabel = label.replace(/"/g, '\\"');
-        dot += `  "${id}" [label="${safeLabel}"];\n`;
-      }
+      const safeLabel = label.replace(/"/g, '\\"');
+      dot += `  "${id}" [label="${safeLabel}"];\n`;
     }
 
 
