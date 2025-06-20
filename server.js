@@ -84,25 +84,25 @@ async function parseAndRenderXML(xml, outputPath) {
 
         const displayName = name.replace(/"/g, '');
         const tagLabel = modType;
-        /* idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;*/
+         idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;
         // idToLabel[id] = `<
         //   <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
         //     <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
         //     <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
         //   </TABLE>
         // >`;
-        const escapeHTML = str =>
-  str.replace(/[<>&"]/g, s => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]));
+//         const escapeHTML = str =>
+//   str.replace(/[<>&"]/g, s => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]));
 
-const safeName = escapeHTML(displayName);
-const safeTag = escapeHTML(tagLabel);
+// const safeName = escapeHTML(displayName);
+// const safeTag = escapeHTML(tagLabel);
 
-idToLabel[id] = `<
-  <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
-    <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
-    <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
-  </TABLE>
->`;
+// idToLabel[id] = `<
+//   <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+//     <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
+//     <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
+//   </TABLE>
+// >`;
 
 
 
