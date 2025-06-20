@@ -95,12 +95,19 @@ async function parseAndRenderXML(xml, outputPath) {
   { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]
 ));
 
+const escapeHTML = str =>
+  str.replace(/[<>&"]/g, s => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]));
+
+const safeName = escapeHTML(displayName);
+const safeTag = escapeHTML(tagLabel);
+
 idToLabel[id] = `<
-  <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
-    <TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
-    <TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="sans-serif">${safeDisplayName}</FONT></TD></TR>
+  <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
+    <TR><TD ALIGN="LEFT" PORT="tag" FIXEDSIZE="FALSE"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" PORT="name" FIXEDSIZE="FALSE"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
   </TABLE>
 >`;
+
 
 
         (mod.ascendants || []).forEach(asc => {
