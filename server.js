@@ -1,5 +1,5 @@
 // Required packages:
-// npm install express multer xml2js viz.js fs
+// npm install express multer xml2js viz.js
 
 const express = require('express');
 const multer = require('multer');
@@ -12,10 +12,8 @@ const app = express();
 const upload = multer({ dest: 'uploads/' });
 const PORT = process.env.PORT || 3000;
 
-/**/
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-/**/
 app.use(express.static('public'));
 
 // Serve upload form
@@ -28,7 +26,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   const results = [];
 
   if (!req.files || !Array.isArray(req.files)) {
-    return res.send("No files uploaded or req.files is not an array.");
+    return res.send("Error - No files uploaded or multer failed to parse 'ivrfiles'.");
   }
 
   for (const file of req.files) {
@@ -57,7 +55,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   res.send(html);
 });
-
 
 // XML parsing and SVG rendering logic
 async function parseAndRenderXML(xml, outputPath) {
