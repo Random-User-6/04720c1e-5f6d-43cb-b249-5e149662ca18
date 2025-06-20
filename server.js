@@ -72,11 +72,15 @@ async function parseAndRenderXML(xml, outputPath) {
     const edgeMap = new Map();
 
     const addEdge = (from, to, label = '', color = '') => {
-      const key = `${from}->${to}`;
-      const variant = label + '::' + color;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Map());
-      edgeMap.get(key).set(variant, { from, to, label, color });
-    };
+    const key = `${from}->${to}`;
+    const variantKey = `${label}::${color}`;
+    if (!edgeMap.has(key)) edgeMap.set(key, new Map());
+    const edgeSet = edgeMap.get(key);
+    if (!edgeSet.has(variantKey)) {
+      edgeSet.set(variantKey, { from, to, label, color });
+    }
+  };
+
 
     for (const modType in modules) {
       for (const mod of modules[modType]) {
