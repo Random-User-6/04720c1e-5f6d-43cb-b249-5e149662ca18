@@ -103,7 +103,7 @@ async function parseAndRenderXML(xml, outputPath) {
             const key = entry.key?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              const color = key.toUpperCase() === 'FALSE' ? 'red' : 'green';
+              const color = key.toUpperCase() === 'FALSE' ? 'red' : 'blue';
               addEdge(id, desc, key.toUpperCase(), color);
             }
           }
