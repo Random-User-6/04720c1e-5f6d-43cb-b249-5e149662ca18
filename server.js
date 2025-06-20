@@ -6,7 +6,8 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const { parseStringPromise } = require('xml2js');
-const { render } = require('viz.js/full.render.js');
+const { default: Viz } = require('viz.js');
+const { Module, render } = require('viz.js/full.render.js');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -122,7 +123,9 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
     dot += '}';
-    const svg = await render(dot);
+
+    const viz = new Viz({ Module, render });
+    const svg = await viz.renderString(dot);
     fs.writeFileSync(outputPath, svg, 'utf8');
   } catch (err) {
     console.error("parseAndRenderXML failed:", err);
