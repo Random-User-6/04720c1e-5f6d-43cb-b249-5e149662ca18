@@ -79,18 +79,29 @@ async function parseAndRenderXML(xml, outputPath) {
     for (const modType in modules) {
       for (const mod of modules[modType]) {
         const id = mod.moduleId?.[0];
-        const name = mod.moduleName?.[0] || modType;
+        const name = mod.moduleName?.[0] || modType;idToLabel
         if (!id) continue;
 
         const displayName = name.replace(/"/g, '');
         const tagLabel = modType;
         /* idToLabel[id] = `<<${tagLabel}>>\\n${displayName}`;*/
-        idToLabel[id] = `<
-          <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
-            <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
-            <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
-          </TABLE>
-        >`;
+        // idToLabel[id] = `<
+        //   <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
+        //     <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
+        //     <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
+        //   </TABLE>
+        // >`;
+        const safeDisplayName = displayName.replace(/[<>&"]/g, s => (
+  { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[s]
+));
+
+idToLabel[id] = `<
+  <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
+    <TR><TD ALIGN="LEFT" BALIGN="LEFT"><FONT FACE="sans-serif">${safeDisplayName}</FONT></TD></TR>
+  </TABLE>
+>`;
+
 
         (mod.ascendants || []).forEach(asc => {
           addEdge(asc, id);
