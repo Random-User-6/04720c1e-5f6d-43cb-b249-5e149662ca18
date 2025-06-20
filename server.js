@@ -99,10 +99,11 @@ const safeTag = escapeHTML(tagLabel);
 
 idToLabel[id] = `<
   <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="6">
-    <TR><TD ALIGN="LEFT">&lt;${safeTag}&gt;</TD></TR>
-    <TR><TD ALIGN="LEFT">${safeName}</TD></TR>
+    <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">&lt;${safeTag}&gt;</FONT></TD></TR>
+    <TR><TD ALIGN="CENTER"><FONT FACE="sans-serif">${safeName}</FONT></TD></TR>
   </TABLE>
 >`;
+
 
 
 
