@@ -155,3 +155,82 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   res.send(html);
 });
+
+// === PATCH NODE LABEL HANDLING ===
+
+async function parseAndRenderXML(xml, outputPath) {
+  const result = await parseStringPromise(xml);
+  const modules = result.ivrScript.modules[0];
+
+  let dot = 'digraph G {\n  node [shape=box];\n';
+  const idToLabel = {};
+  const edgeMap = new Map();
+
+  const addEdge = (from, to, label = '') => {
+    const key = `${from}->${to}`;
+    if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+    edgeMap.get(key).add(label || '');
+  };
+
+  for (const modType in modules) {
+    for (const mod of modules[modType]) {
+      const id = mod.moduleId?.[0];
+      const name = mod.moduleName?.[0] || modType;
+      if (!id) continue;
+
+      const displayName = name.replace(/"/g, '');
+      const tagLabel = modType;
+
+      idToLabel[id] = `
+        <
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
+          <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="10" FACE="sans-serif">&lt;${tagLabel}&gt;</FONT></TD></TR>
+          <TR><TD ALIGN="LEFT"><FONT FACE="sans-serif">${displayName}</FONT></TD></TR>
+        </TABLE>
+        >`;
+
+      (mod.ascendants || []).forEach(asc => addEdge(asc, id));
+      if (mod.singleDescendant?.[0]) addEdge(id, mod.singleDescendant[0]);
+
+      if (modType === 'ifElse') {
+        const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+        for (const entry of entries) {
+          const key = entry.key?.[0];
+          const desc = entry.value?.[0]?.desc?.[0];
+          if (key && desc) addEdge(id, desc, key.toUpperCase());
+        }
+      }
+
+      if (modType === 'case') {
+        const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+        for (const entry of entries) {
+          const names = entry.value?.[0]?.name || [];
+          const descs = entry.value?.[0]?.desc || [];
+          for (let i = 0; i < descs.length; i++) {
+            const label = names[i] || names[0] || '';
+            const desc = descs[i];
+            if (label && desc) addEdge(id, desc, label);
+          }
+        }
+      }
+    }
+  }
+
+  for (const [id, label] of Object.entries(idToLabel)) {
+    dot += `  "${id}" [label=${label}];\n`;
+  }
+
+  for (const [key, labels] of edgeMap.entries()) {
+    const [from, to] = key.split('->');
+    const labelArr = Array.from(labels).filter(Boolean);
+    const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
+    const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+    dot += `  "${from}" -> "${to}"${attrString};\n`;
+  }
+
+  dot += '}';
+
+  const viz = new Viz({ Module, render });
+  const svg = await viz.renderString(dot);
+  fs.writeFileSync(outputPath, svg, 'utf8');
+}
