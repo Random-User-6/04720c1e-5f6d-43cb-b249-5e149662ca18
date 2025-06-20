@@ -112,11 +112,15 @@ async function parseAndRenderXML(xml, outputPath) {
         if (modType === 'case') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
-            const name = entry.value?.[0]?.name?.[0];
-            const desc = entry.value?.[0]?.desc?.[0];
-            if (name && desc) {
-              const color = name.toLowerCase() === 'no match' ? 'red' : 'green';
-              addEdge(id, desc, name, color);
+            const names = entry.value?.[0]?.name || [];
+            const descs = entry.value?.[0]?.desc || [];
+            for (let i = 0; i < descs.length; i++) {
+              const label = names[i] || names[0] || '';
+              const desc = descs[i];
+              if (label && desc) {
+                const color = label.toLowerCase() === 'no match' ? 'red' : 'green';
+                addEdge(id, desc, label, color);
+              }
             }
           }
         }
