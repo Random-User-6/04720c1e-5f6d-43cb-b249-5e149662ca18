@@ -129,8 +129,16 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
     for (const [id, label] of Object.entries(idToLabel)) {
-      dot += `  "${id}" [label="${label}"];\n`;
+      if (label.trim().startsWith('<')) {
+        // HTML-like label, no quotes
+        dot += `  "${id}" [label=${label}];\n`;
+      } else {
+        // Plain text label, escape double quotes
+        const safeLabel = label.replace(/"/g, '\\"');
+        dot += `  "${id}" [label="${safeLabel}"];\n`;
+      }
     }
+
 
     for (const [key, labels] of edgeMap.entries()) {
       const [from, to] = key.split('->');
