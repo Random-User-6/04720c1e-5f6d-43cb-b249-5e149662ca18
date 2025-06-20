@@ -69,7 +69,9 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     html += `
       </ul>
       <div class="back-link">
-        <a href="/">Upload More</a>
+        <form action="/" method="get">
+          <button type="submit">Upload More</button>
+        </form>
       </div>
     </body>
     </html>
