@@ -17,12 +17,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
-// Serve upload form
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-// Handle file uploads
 app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   const results = [];
 
@@ -43,7 +41,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       console.error('Error in parseAndRenderXML:', e);
       results.push({ name: file.originalname || file.filename, error: e.message });
     } finally {
-      fs.unlinkSync(file.path); // Clean up temp file
+      fs.unlinkSync(file.path);
     }
   }
 
@@ -60,7 +58,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   res.send(html);
 });
 
-// XML parsing and SVG rendering logic
 async function parseAndRenderXML(xml, outputPath) {
   try {
     const result = await parseStringPromise(xml);
@@ -73,20 +70,17 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    const addEdge = (from, to, label = '', color = '') => {
-  const key = `${from}->${to}`;
-  const isDefault = !label && !color;
-  if (isDefault && edgeMap.has(key)) return;
+    const addEdge = (from, to, label = '') => {
+      const key = `${from}->${to}`;
+      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+      const existingVariants = edgeMap.get(key);
 
-  if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-  const existingVariants = edgeMap.get(key);
+      for (const e of existingVariants) {
+        if (e.label === label) return;
+      }
 
-  for (const e of existingVariants) {
-    if (e.label === label && e.color === color) return;
-  }
-
-  existingVariants.add({ from, to, label, color });
-};
+      existingVariants.add({ from, to, label });
+    };
 
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -109,8 +103,7 @@ async function parseAndRenderXML(xml, outputPath) {
             const key = entry.key?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              const color = key.toUpperCase() === 'FALSE' ? 'red' : 'blue';
-              addEdge(id, desc, key.toUpperCase(), color);
+              addEdge(id, desc, key.toUpperCase());
             }
           }
         }
@@ -124,8 +117,7 @@ async function parseAndRenderXML(xml, outputPath) {
               const label = names[i] || names[0] || '';
               const desc = descs[i];
               if (label && desc) {
-                const color = label.toLowerCase() === 'no match' ? 'red' : 'green';
-                addEdge(id, desc, label, color);
+                addEdge(id, desc, label);
               }
             }
           }
@@ -138,10 +130,9 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
     for (const edgeVariants of edgeMap.values()) {
-  for (const edge of edgeVariants) {
+      for (const edge of edgeVariants) {
         const attrs = [];
         if (edge.label) attrs.push(`label=\"${edge.label}\"`);
-        if (edge.color) attrs.push(`color=${edge.color}`);
         const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
         dot += `  "${edge.from}" -> "${edge.to}"${attrString};\n`;
       }
