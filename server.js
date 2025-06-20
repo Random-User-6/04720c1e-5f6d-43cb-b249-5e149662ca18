@@ -69,7 +69,7 @@ async function parseAndRenderXML(xml, outputPath) {
 
     let dot = 'digraph G {\n  node [shape=box];\n';
     const idToLabel = {};
-    const edges = [];
+    const edgeMap = new Map();
 
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -78,12 +78,19 @@ async function parseAndRenderXML(xml, outputPath) {
         if (!id) continue;
         idToLabel[id] = name.replace(/"/g, '');
 
+        const addEdge = (from, to, label = '', color = '') => {
+          const key = `${from}->${to}`;
+          if (!edgeMap.has(key)) {
+            edgeMap.set(key, { from, to, label, color });
+          }
+        };
+
         (mod.ascendants || []).forEach(asc => {
-          edges.push({ from: asc, to: id });
+          addEdge(asc, id);
         });
 
         if (mod.singleDescendant?.[0]) {
-          edges.push({ from: id, to: mod.singleDescendant[0] });
+          addEdge(id, mod.singleDescendant[0]);
         }
 
         if (modType === 'ifElse') {
@@ -92,7 +99,8 @@ async function parseAndRenderXML(xml, outputPath) {
             const key = entry.key?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              edges.push({ from: id, to: desc, label: key.toUpperCase(), color: key.toUpperCase() === 'FALSE' ? 'red' : 'green' });
+              const color = key.toUpperCase() === 'FALSE' ? 'red' : 'green';
+              addEdge(id, desc, key.toUpperCase(), color);
             }
           }
         }
@@ -103,7 +111,8 @@ async function parseAndRenderXML(xml, outputPath) {
             const name = entry.value?.[0]?.name?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (name && desc) {
-              edges.push({ from: id, to: desc, label: name, color: name.toLowerCase() === 'no match' ? 'red' : 'green' });
+              const color = name.toLowerCase() === 'no match' ? 'red' : 'green';
+              addEdge(id, desc, name, color);
             }
           }
         }
@@ -114,7 +123,7 @@ async function parseAndRenderXML(xml, outputPath) {
       dot += `  "${id}" [label="${label}"];\n`;
     }
 
-    for (const edge of edges) {
+    for (const edge of edgeMap.values()) {
       const attrs = [];
       if (edge.label) attrs.push(`label=\"${edge.label}\"`);
       if (edge.color) attrs.push(`color=${edge.color}`);
