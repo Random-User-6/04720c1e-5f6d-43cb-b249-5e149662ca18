@@ -113,6 +113,10 @@ async function parseAndRenderXML(xml, outputPath) {
           addEdge(id, mod.singleDescendant[0]);
         }
 
+        if (mod.exceptionalDescendant?.[0]) {
+          addEdge(id, mod.exceptionalDescendant[0], 'Exception');
+        }
+
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
