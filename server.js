@@ -13,6 +13,8 @@ const app = express();
 const upload = multer({ dest: 'uploads/' });
 const PORT = process.env.PORT || 3000;
 
+const vizInstance = new Viz({ Module, render }); // Shared instance
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
@@ -148,7 +150,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
@@ -241,8 +243,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     if (format === 'dot') {
       fs.writeFileSync(outputPath, dot, 'utf8');
     } else if (format === 'svg') {
-      const viz = new Viz({ Module, render });
-      const svg = await viz.renderString(dot);
+      const svg = await vizInstance.renderString(dot);
       fs.writeFileSync(outputPath, svg, 'utf8');
     } else {
       throw new Error(`Unsupported format: ${format}`);
