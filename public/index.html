@@ -9,6 +9,14 @@
   <h1>Upload IVR Files</h1>
   <form action="/upload" method="POST" enctype="multipart/form-data">
     <input type="file" name="ivrfiles" multiple required />
+    
+    <label>Output format:</label><br>
+    <input type="radio" id="svg" name="format" value="svg" checked>
+    <label for="svg">SVG (vector, browser friendly)</label><br>
+  
+    <input type="radio" id="png" name="format" value="png">
+    <label for="png">PNG (image file)</label><br>
+    
     <button type="submit">Upload and Process</button>
   </form>
 </body>
