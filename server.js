@@ -85,7 +85,9 @@ async function parseAndRenderXML(xml, outputPath) {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box];\n';
+    // let dot = 'digraph G {\n  node [shape=box];\n';
+    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+
     const idToLabel = {};
     const edgeMap = new Map();
 
