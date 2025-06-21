@@ -31,6 +31,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   for (const file of req.files) {
     try {
+      console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
       const extension = format === 'dot' ? 'dot' : 'svg';
@@ -40,6 +41,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
       results.push({ name: file.originalname, svgPath: `/${outputFilename}` });
     } catch (e) {
+      console.error('Error in parseAndRenderXML:', e);
       results.push({ name: file.originalname || file.filename, error: e.message });
     } finally {
       fs.unlinkSync(file.path);
@@ -56,6 +58,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     </head>
     <body>
       <h1>Processed Files</h1>
+
       <div>
         <button onclick="selectAll()">Select All</button>
         <button onclick="selectNone()">Select None</button>
@@ -65,15 +68,18 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         <button onclick="downloadSelected('png')">Download Selected as PNG</button>
       </div>
       <ul>
-  `;
-  for (const result of results) {
-    if (result.error) {
-      html += `<li>${result.name}: Error - ${result.error}</li>`;
-    } else {
-      html += `<li><input type="checkbox" class="dl-check" data-path="${result.svgPath}" checked> ${result.name}</li>`;
-    }
-  }
-  html += `</ul>
+        ${results.map(result => {
+          if (result.error) {
+            return `<li>${result.name}: Error - ${result.error}</li>`;
+          }
+          return `
+            <li>
+              <input type="checkbox" class="dl-check" data-path="${result.svgPath}" />
+              <a href="${result.svgPath}" target="_blank">${result.name}</a>
+            </li>
+          `;
+        }).join('')}
+      </ul>
       <form action="/" method="get">
         <button type="submit">Upload More</button>
       </form>
@@ -116,7 +122,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
               });
           });
         }
-
         function selectAll() {
           document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
         }
@@ -131,7 +136,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   res.send(html);
 });
 
-async function parseAndRenderXML(xml, outputPath, format) {
+async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   try {
     const result = await parseStringPromise(xml);
     if (!result?.ivrScript?.modules?.[0]) {
@@ -139,13 +144,15 @@ async function parseAndRenderXML(xml, outputPath, format) {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box];\n';
+    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
     const addEdge = (from, to, label = '', style = '') => {
       const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+      if (!edgeMap.has(key)) {
+        edgeMap.set(key, new Set());
+      }
       edgeMap.get(key).add(JSON.stringify({ label, style }));
     };
 
@@ -160,7 +167,7 @@ async function parseAndRenderXML(xml, outputPath, format) {
         idToLabel[id] = `${tagLabel}\\n${displayName}`;
 
         (mod.ascendants || []).forEach(asc => {
-          addEdge(asc, id);
+          if (typeof asc === 'string') addEdge(asc, id);
         });
 
         if (mod.singleDescendant?.[0]) {
@@ -171,16 +178,26 @@ async function parseAndRenderXML(xml, outputPath, format) {
           addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=2');
         }
 
-        if (modType === 'ifElse' || modType === 'case') {
+        if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
-            const keys = entry.key || [];
-            const descs = entry.value?.[0]?.desc || [];
+            const key = entry.key?.[0];
+            const desc = entry.value?.[0]?.desc?.[0];
+            if (key && desc) {
+              addEdge(id, desc, key.toUpperCase());
+            }
+          }
+        }
+
+        if (modType === 'case') {
+          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+          for (const entry of entries) {
             const names = entry.value?.[0]?.name || [];
+            const descs = entry.value?.[0]?.desc || [];
             for (let i = 0; i < descs.length; i++) {
-              const label = (keys[i] || names[i] || keys[0] || names[0] || '').toUpperCase();
+              const label = names[i] || names[0] || '';
               const desc = descs[i];
-              if (desc) {
+              if (label && desc) {
                 addEdge(id, desc, label);
               }
             }
@@ -191,7 +208,7 @@ async function parseAndRenderXML(xml, outputPath, format) {
 
     for (const [id, label] of Object.entries(idToLabel)) {
       const safeLabel = label.replace(/"/g, '\\"');
-      dot += `  "${id}" [label="${safeLabel}"]\n`;
+      dot += `  "${id}" [label="${safeLabel}"];\n`;
     }
 
     for (const [key, valueSet] of edgeMap.entries()) {
@@ -207,10 +224,12 @@ async function parseAndRenderXML(xml, outputPath, format) {
 
       const attrs = [];
       if (labels.length) attrs.push(`label="${labels.join(' / ')}"`);
-      for (const style of styles) attrs.push(style);
+      for (const style of styles) {
+        attrs.push(style);
+      }
 
       const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${from}" -> "${to}"${attrString}\n`;
+      dot += `  "${from}" -> "${to}"${attrString};\n`;
     }
 
     dot += '}';
