@@ -89,115 +89,67 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       <form action="/" method="get">
         <button type="submit">Upload More</button>
       </form>
-      // <script>
-      //   function downloadSelected(type) {
-      //     const boxes = document.querySelectorAll('.dl-check:checked');
-      //     if (boxes.length === 0) return alert('No files selected.');
-      //     boxes.forEach(box => {
-      //       const url = box.getAttribute('data-path');
-      //       const filename = url.split('/').pop().replace(/\.svg$/, type === 'svg' ? '.svg' : '.png');
-      //       fetch(url)
-      //         .then(res => res.text())
-      //         .then(data => {
-      //           if (type === 'svg') {
-      //             const blob = new Blob([data], { type: 'image/svg+xml' });
-      //             const link = document.createElement('a');
-      //             link.href = URL.createObjectURL(blob);
-      //             link.download = filename;
-      //             link.click();
-      //           } else if (type === 'png') {
-      //             const img = new Image();
-      //             const svgBlob = new Blob([data], { type: 'image/svg+xml' });
-      //             const urlObj = URL.createObjectURL(svgBlob);
-      //             img.onload = function () {
-      //               const canvas = document.createElement('canvas');
-      //               canvas.width = img.width;
-      //               canvas.height = img.height;
-      //               const ctx = canvas.getContext('2d');
-      //               ctx.drawImage(img, 0, 0);
-      //               URL.revokeObjectURL(urlObj);
-      //               canvas.toBlob(blob => {
-      //                 const link = document.createElement('a');
-      //                 link.href = URL.createObjectURL(blob);
-      //                 link.download = filename;
-      //                 link.click();
-      //               }, 'image/png');
-      //             };
-      //             img.src = urlObj;
-      //           }
-      //         });
-      //     });
-      //   }
-      //   function selectAll() {
-      //     document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
-      //   }
-
-      //   function selectNone() {
-      //     document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
-      //   }
-      // </script>
       <script>
-  async function downloadSelected(type) {
-    const boxes = Array.from(document.querySelectorAll('.dl-check:checked'));
-    if (boxes.length === 0) return alert('No files selected.');
+        async function downloadSelected(type) {
+          const boxes = Array.from(document.querySelectorAll('.dl-check:checked'));
+          if (boxes.length === 0) return alert('No files selected.');
 
-    for (const box of boxes) {
-      const url = box.getAttribute('data-path');
-      const filename = url.split('/').pop().replace(/\.svg$/, type === 'svg' ? '.svg' : '.png');
-      try {
-        const res = await fetch(url);
-        const data = await res.text();
+          for (const box of boxes) {
+            const url = box.getAttribute('data-path');
+            const filename = url.split('/').pop().replace(/\.svg$/, type === 'svg' ? '.svg' : '.png');
+            try {
+              const res = await fetch(url);
+              const data = await res.text();
 
-        if (type === 'svg') {
-          const blob = new Blob([data], { type: 'image/svg+xml' });
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        } else if (type === 'png') {
-          const img = new Image();
-          const svgBlob = new Blob([data], { type: 'image/svg+xml' });
-          const urlObj = URL.createObjectURL(svgBlob);
-
-          await new Promise((resolve, reject) => {
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.width;
-              canvas.height = img.height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0);
-              URL.revokeObjectURL(urlObj);
-              canvas.toBlob(blob => {
+              if (type === 'svg') {
+                const blob = new Blob([data], { type: 'image/svg+xml' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                resolve();
-              }, 'image/png');
-            };
-            img.onerror = reject;
-            img.src = urlObj;
-          });
+              } else if (type === 'png') {
+                const img = new Image();
+                const svgBlob = new Blob([data], { type: 'image/svg+xml' });
+                const urlObj = URL.createObjectURL(svgBlob);
+
+                await new Promise((resolve, reject) => {
+                  img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(urlObj);
+                    canvas.toBlob(blob => {
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = filename;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      resolve();
+                    }, 'image/png');
+                  };
+                  img.onerror = reject;
+                  img.src = urlObj;
+                });
+              }
+            } catch (err) {
+              console.error('Download failed:', err);
+            }
+          }
         }
-      } catch (err) {
-        console.error(`Failed to download ${filename}:`, err);
-      }
-    }
-  }
 
-  function selectAll() {
-    document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
-  }
+        function selectAll() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
+        }
 
-  function selectNone() {
-    document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
-  }
-</script>
-
+        function selectNone() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
+        }
+      </script>
     </body>
     </html>
   `;
