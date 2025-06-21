@@ -138,9 +138,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
     for (const [id, label] of Object.entries(idToLabel)) {
       const safeLabel = label.replace(/"/g, '\\"');
-//       dot += `  "${id}" [label="${safeLabel}"];
-// `;`;
-  dot += `  "${id}" [label="${safeLabel}"];\n`;
+      dot += `  "${id}" [label="${safeLabel}"];\n`;
     }
 
     for (const [key, valueSet] of edgeMap.entries()) {
