@@ -102,10 +102,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 //   }
 //   edgeMap.get(key).add(JSON.stringify({ label, style }));
 // };
-const Viz = require('viz.js');
-const { Module, render } = require('viz.js/full.render.js');
-const sharp = require('sharp'); // Make sure you ran: npm install sharp
-const fs = require('fs');
+
 
 async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   try {
