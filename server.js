@@ -122,7 +122,7 @@ const addEdge = (from, to, label = '', style = '') => {
         //   addEdge(id, mod.exceptionalDescendant[0], 'Exception');
         // }
         if (mod.exceptionalDescendant?.[0]) {
-  addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red"');
+  addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red"');
 }
 
 
