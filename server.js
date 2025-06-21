@@ -55,6 +55,10 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       <meta charset="UTF-8">
       <title>Processed Files</title>
       <link rel="stylesheet" href="/styles.css">
+      <style>
+        .file-list { list-style-type: none; padding-left: 0; }
+        .file-list li { margin: 5px 0; }
+      </style>
     </head>
     <body>
       <h1>Processed Files</h1>
@@ -67,7 +71,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         <button onclick="downloadSelected('svg')">Download Selected as SVG</button>
         <button onclick="downloadSelected('png')">Download Selected as PNG</button>
       </div>
-      <ul>
+      <ul class="file-list">
         ${results.map(result => {
           if (result.error) {
             return `<li>${result.name}: Error - ${result.error}</li>`;
@@ -144,7 +148,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
