@@ -58,27 +58,65 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     </head>
     <body>
       <h1>Processed Files</h1>
-      <ul>
-  `;
-
-  for (const result of results) {
-    if (result.error) {
-      html += `<li>${result.name}: Error - ${result.error}</li>`;
-    } else {
-      html += `<li><a href="${result.svgPath}" target="_blank">${result.name}</a></li>`;
-    }
-  }
-
-  html += `
-      </ul>
+      $1</ul>
       <div>
-        <button onclick="downloadAs('svg')">Download as SVG</button>
-        <button onclick="downloadAs('png')">Download as PNG</button>
+        <button onclick="selectAll()">Select All</button>
+        <button onclick="selectNone()">Select None</button>
+      </div>
+      <div>
+        <button onclick="downloadSelected('svg')">Download Selected as SVG</button>
+        <button onclick="downloadSelected('png')">Download Selected as PNG</button>
       </div>
       <form action="/" method="get">
         <button type="submit">Upload More</button>
       </form>
       <script>
+        function downloadSelected(type) {
+          const boxes = document.querySelectorAll('.dl-check:checked');
+          if (boxes.length === 0) return alert('No files selected.');
+          boxes.forEach(box => {
+            const url = box.getAttribute('data-path');
+            const filename = url.split('/').pop().replace(/\.svg$/, type === 'svg' ? '.svg' : '.png');
+            fetch(url)
+              .then(res => res.text())
+              .then(data => {
+                if (type === 'svg') {
+                  const blob = new Blob([data], { type: 'image/svg+xml' });
+                  const link = document.createElement('a');
+                  link.href = URL.createObjectURL(blob);
+                  link.download = filename;
+                  link.click();
+                } else if (type === 'png') {
+                  const img = new Image();
+                  const svgBlob = new Blob([data], { type: 'image/svg+xml' });
+                  const urlObj = URL.createObjectURL(svgBlob);
+                  img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(urlObj);
+                    canvas.toBlob(blob => {
+                      const link = document.createElement('a');
+                      link.href = URL.createObjectURL(blob);
+                      link.download = filename;
+                      link.click();
+                    }, 'image/png');
+                  };
+                  img.src = urlObj;
+                }
+              });
+          });
+        }
+              function selectAll() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
+        }
+
+        function selectNone() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
+        }
+      </script>
         function downloadAs(type) {
           const link = document.createElement('a');
           const svg = document.querySelector('object, embed, iframe, img[src$=".svg"], a[href$=".svg"]');
@@ -127,7 +165,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
