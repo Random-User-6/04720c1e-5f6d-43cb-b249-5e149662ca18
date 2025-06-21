@@ -1,11 +1,10 @@
 // Required packages:
-// npm install express multer xml2js viz.js sharp
+// npm install express multer xml2js viz.js
 
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 const { parseStringPromise } = require('xml2js');
 const Viz = require('viz.js');
 const { Module, render } = require('viz.js/full.render.js');
@@ -35,7 +34,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
-      const extension = format === 'dot' ? 'dot' : format === 'png' ? 'png' : 'svg';
+      const extension = format === 'dot' ? 'dot' : 'svg';
       const outputFilename = `${file.originalname}_${timestamp}.${extension}`;
       const outputPath = `public/${outputFilename}`;
       await parseAndRenderXML(xml, outputPath, format);
@@ -72,9 +71,48 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   html += `
       </ul>
-        <form action="/" method="get">
-          <button type="submit">Upload More</button>
-        </form>
+      <div>
+        <button onclick="downloadAs('svg')">Download as SVG</button>
+        <button onclick="downloadAs('png')">Download as PNG</button>
+      </div>
+      <form action="/" method="get">
+        <button type="submit">Upload More</button>
+      </form>
+      <script>
+        function downloadAs(type) {
+          const link = document.createElement('a');
+          const svg = document.querySelector('object, embed, iframe, img[src$=".svg"], a[href$=".svg"]');
+          if (!svg) return alert('No SVG found to convert.');
+          fetch(svg.href || svg.src || svg.getAttribute('href'))
+            .then(res => res.text())
+            .then(data => {
+              if (type === 'svg') {
+                const blob = new Blob([data], { type: 'image/svg+xml' });
+                link.href = URL.createObjectURL(blob);
+                link.download = 'graph.svg';
+                link.click();
+              } else if (type === 'png') {
+                const img = new Image();
+                const svgBlob = new Blob([data], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(svgBlob);
+                img.onload = function() {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0);
+                  URL.revokeObjectURL(url);
+                  canvas.toBlob(blob => {
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'graph.png';
+                    link.click();
+                  }, 'image/png');
+                };
+                img.src = url;
+              }
+            });
+        }
+      </script>
     </body>
     </html>
     `;
@@ -89,7 +127,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
@@ -120,7 +158,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         }
 
         if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=2');
+          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=2');
         }
 
         if (modType === 'ifElse') {
@@ -187,12 +225,6 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
       const viz = new Viz({ Module, render });
       const svg = await viz.renderString(dot);
       fs.writeFileSync(outputPath, svg, 'utf8');
-    } else if (format === 'png') {
-      const viz = new Viz({ Module, render });
-      const svg = await viz.renderString(dot);
-      const buffer = Buffer.from(svg);
-      const pngBuffer = await sharp(buffer).png().toBuffer();
-      fs.writeFileSync(outputPath, pngBuffer);
     } else {
       throw new Error(`Unsupported format: ${format}`);
     }
