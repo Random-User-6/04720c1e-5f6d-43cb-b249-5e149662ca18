@@ -89,11 +89,14 @@ async function parseAndRenderXML(xml, outputPath) {
     const idToLabel = {};
     const edgeMap = new Map();
 
-    const addEdge = (from, to, label = '') => {
-      const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-      edgeMap.get(key).add(label || '');
-    };
+const addEdge = (from, to, label = '', style = '') => {
+  const key = `${from}->${to}`;
+  if (!edgeMap.has(key)) {
+    edgeMap.set(key, new Set());
+  }
+  edgeMap.get(key).add(JSON.stringify({ label, style }));
+};
+
   
     for (const modType in modules) {
       for (const mod of modules[modType]) {
@@ -116,6 +119,10 @@ async function parseAndRenderXML(xml, outputPath) {
         if (mod.exceptionalDescendant?.[0]) {
           addEdge(id, mod.exceptionalDescendant[0], 'Exception');
         }
+        if (mod.exceptionalDescendant?.[0]) {
+  addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red"');
+}
+
 
         if (modType === 'ifElse') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
@@ -151,13 +158,27 @@ async function parseAndRenderXML(xml, outputPath) {
     }
 
 
-    for (const [key, labels] of edgeMap.entries()) {
-      const [from, to] = key.split('->');
-      const labelArr = Array.from(labels).filter(Boolean);
-      const attrs = labelArr.length ? [`label=\"${labelArr.join(' / ')}\"`] : [];
-      const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${from}" -> "${to}"${attrString};\n`;
-    }
+    for (const [key, valueSet] of edgeMap.entries()) {
+  const [from, to] = key.split('->');
+  let labels = [];
+  let styles = new Set();
+
+  for (const item of valueSet) {
+    const { label, style } = JSON.parse(item);
+    if (label) labels.push(label);
+    if (style) styles.add(style);
+  }
+
+  const attrs = [];
+  if (labels.length) attrs.push(`label="${labels.join(' / ')}"`);
+  for (const style of styles) {
+    attrs.push(style);
+  }
+
+  const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
+  dot += `  "${from}" -> "${to}"${attrString};\n`;
+}
+
     
     dot += '}';
 
