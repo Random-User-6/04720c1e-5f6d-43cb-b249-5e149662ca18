@@ -168,7 +168,7 @@ async function parseAndRenderXML(xml, outputPath, format) {
         }
 
         if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red"');
+          addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=2');
         }
 
         if (modType === 'ifElse' || modType === 'case') {
