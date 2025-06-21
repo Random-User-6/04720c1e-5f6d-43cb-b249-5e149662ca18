@@ -1,10 +1,11 @@
 // Required packages:
-// npm install express multer xml2js viz.js
+// npm install express multer xml2js viz.js sharp
 
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { parseStringPromise } = require('xml2js');
 const Viz = require('viz.js');
 const { Module, render } = require('viz.js/full.render.js');
@@ -23,7 +24,8 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   const results = [];
-          const format = req.body.format || 'svg';
+  const format = req.body.format || 'svg';
+
   if (!req.files || !Array.isArray(req.files)) {
     return res.send("Error - No files uploaded or multer failed to parse 'ivrfiles'.");
   }
@@ -33,11 +35,9 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
-      // const outputFilename = `${file.originalname}_${timestamp}.svg`;
       const extension = format === 'dot' ? 'dot' : format === 'png' ? 'png' : 'svg';
-          const outputFilename = `${file.originalname}_${timestamp}.${extension}`;
+      const outputFilename = `${file.originalname}_${timestamp}.${extension}`;
       const outputPath = `public/${outputFilename}`;
-      // await parseAndRenderXML(xml, outputPath);
       await parseAndRenderXML(xml, outputPath, format);
 
       results.push({ name: file.originalname, svgPath: `/${outputFilename}` });
@@ -60,17 +60,17 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     <body>
       <h1>Processed Files</h1>
       <ul>
-    `;
-    
-    for (const result of results) {
-      if (result.error) {
-        html += `<li>${result.name}: Error - ${result.error}</li>`;
-      } else {
-        html += `<li><a href="${result.svgPath}" target="_blank">${result.name}</a></li>`;
-      }
+  `;
+
+  for (const result of results) {
+    if (result.error) {
+      html += `<li>${result.name}: Error - ${result.error}</li>`;
+    } else {
+      html += `<li><a href="${result.svgPath}" target="_blank">${result.name}</a></li>`;
     }
-    
-    html += `
+  }
+
+  html += `
       </ul>
         <form action="/" method="get">
           <button type="submit">Upload More</button>
@@ -81,29 +81,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   res.send(html);
 });
 
-// async function parseAndRenderXML(xml, outputPath) {
-//   try {
-//     const result = await parseStringPromise(xml);
-//     if (!result?.ivrScript?.modules?.[0]) {
-//       throw new Error("Invalid or unsupported IVR XML structure: 'ivrScript.modules[0]' missing");
-//     }
-//     const modules = result.ivrScript.modules[0];
-
-//     // let dot = 'digraph G {\n  node [shape=box];\n';
-//     let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
-
-//     const idToLabel = {};
-//     const edgeMap = new Map();
-
-// const addEdge = (from, to, label = '', style = '') => {
-//   const key = `${from}->${to}`;
-//   if (!edgeMap.has(key)) {
-//     edgeMap.set(key, new Set());
-//   }
-//   edgeMap.get(key).add(JSON.stringify({ label, style }));
-// };
-
-
 async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   try {
     const result = await parseStringPromise(xml);
@@ -112,7 +89,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     }
     const modules = result.ivrScript.modules[0];
 
-    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
     const idToLabel = {};
     const edgeMap = new Map();
 
@@ -143,7 +120,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         }
 
         if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=2');
+          addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=2');
         }
 
         if (modType === 'ifElse') {
@@ -174,13 +151,12 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
       }
     }
 
-    // Nodes
     for (const [id, label] of Object.entries(idToLabel)) {
       const safeLabel = label.replace(/"/g, '\\"');
-      dot += `  "${id}" [label="${safeLabel}"];\n`;
+      dot += `  "${id}" [label="${safeLabel}"];
+`;
     }
 
-    // Edges
     for (const [key, valueSet] of edgeMap.entries()) {
       const [from, to] = key.split('->');
       let labels = [];
@@ -199,12 +175,12 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
       }
 
       const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-      dot += `  "${from}" -> "${to}"${attrString};\n`;
+      dot += `  "${from}" -> "${to}"${attrString};
+`;
     }
 
     dot += '}';
 
-    // Output handling
     if (format === 'dot') {
       fs.writeFileSync(outputPath, dot, 'utf8');
     } else if (format === 'svg') {
@@ -220,107 +196,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     } else {
       throw new Error(`Unsupported format: ${format}`);
     }
-
   } catch (err) {
     console.error("parseAndRenderXML failed:", err);
     throw err;
   }
 }
-
-
-  
-    for (const modType in modules) {
-      for (const mod of modules[modType]) {
-        const id = mod.moduleId?.[0];
-        const name = mod.moduleName?.[0] || modType;idToLabel
-        if (!id) continue;
-
-        const displayName = name.replace(/"/g, '');
-        const tagLabel = modType;
-        idToLabel[id] = `${tagLabel}\\n${displayName}`;
-        
-        (mod.ascendants || []).forEach(asc => {
-          addEdge(asc, id);
-        });
-
-        if (mod.singleDescendant?.[0]) {
-          addEdge(id, mod.singleDescendant[0]);
-        }
-
-        // if (mod.exceptionalDescendant?.[0]) {
-        //   addEdge(id, mod.exceptionalDescendant[0], 'Exception');
-        // }
-        if (mod.exceptionalDescendant?.[0]) {
-  addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red"');
-}
-
-
-        if (modType === 'ifElse') {
-          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-          for (const entry of entries) {
-            const key = entry.key?.[0];
-            const desc = entry.value?.[0]?.desc?.[0];
-            if (key && desc) {
-              addEdge(id, desc, key.toUpperCase());
-            }
-          }
-        }
-        
-        if (modType === 'case') {
-          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-          for (const entry of entries) {
-            const names = entry.value?.[0]?.name || [];
-            const descs = entry.value?.[0]?.desc || [];
-            for (let i = 0; i < descs.length; i++) {
-              const label = names[i] || names[0] || '';
-              const desc = descs[i];
-              if (label && desc) {
-                addEdge(id, desc, label);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    for (const [id, label] of Object.entries(idToLabel)) {
-      const safeLabel = label.replace(/"/g, '\\"');
-      dot += `  "${id}" [label="${safeLabel}"];\n`;
-    }
-
-
-    for (const [key, valueSet] of edgeMap.entries()) {
-  const [from, to] = key.split('->');
-  let labels = [];
-  let styles = new Set();
-
-  for (const item of valueSet) {
-    const { label, style } = JSON.parse(item);
-    if (label) labels.push(label);
-    if (style) styles.add(style);
-  }
-
-  const attrs = [];
-  if (labels.length) attrs.push(`label="${labels.join(' / ')}"`);
-  for (const style of styles) {
-    attrs.push(style);
-  }
-
-  const attrString = attrs.length ? ` [${attrs.join(', ')}]` : '';
-  dot += `  "${from}" -> "${to}"${attrString};\n`;
-}
-
-    
-    dot += '}';
-
-    const viz = new Viz({ Module, render });
-    const svg = await viz.renderString(dot);
-    fs.writeFileSync(outputPath, svg, 'utf8');
-  } catch (err) {
-    console.error("parseAndRenderXML failed:", err);
-    throw err;
-  }
-}
-
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
