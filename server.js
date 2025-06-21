@@ -58,7 +58,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     </head>
     <body>
       <h1>Processed Files</h1>
-      $1</ul>
+      
       <div>
         <button onclick="selectAll()">Select All</button>
         <button onclick="selectNone()">Select None</button>
@@ -117,98 +117,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
           document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
         }
       </script>
-        function downloadAs(type) {
-          const link = document.createElement('a');
-          const svg = document.querySelector('object, embed, iframe, img[src$=".svg"], a[href$=".svg"]');
-          if (!svg) return alert('No SVG found to convert.');
-          fetch(svg.href || svg.src || svg.getAttribute('href'))
-            .then(res => res.text())
-            .then(data => {
-              if (type === 'svg') {
-                const blob = new Blob([data], { type: 'image/svg+xml' });
-                link.href = URL.createObjectURL(blob);
-                link.download = 'graph.svg';
-                link.click();
-              } else if (type === 'png') {
-                const img = new Image();
-                const svgBlob = new Blob([data], { type: 'image/svg+xml' });
-                const url = URL.createObjectURL(svgBlob);
-                img.onload = function() {
-                  const canvas = document.createElement('canvas');
-                  canvas.width = img.width;
-                  canvas.height = img.height;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0);
-                  URL.revokeObjectURL(url);
-                  canvas.toBlob(blob => {
-                    link.href = URL.createObjectURL(blob);
-                    link.download = 'graph.png';
-                    link.click();
-                  }, 'image/png');
-                };
-                img.src = url;
-              }
-            });
-        }
-      </script>
-    </body>
-    </html>
-    `;
-  res.send(html);
-});
 
-async function parseAndRenderXML(xml, outputPath, format = 'svg') {
-  try {
-    const result = await parseStringPromise(xml);
-    if (!result?.ivrScript?.modules?.[0]) {
-      throw new Error("Invalid or unsupported IVR XML structure: 'ivrScript.modules[0]' missing");
-    }
-    const modules = result.ivrScript.modules[0];
-
-    let dot = 'digraph G {\n  rankdir=LR;\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
-    const idToLabel = {};
-    const edgeMap = new Map();
-
-    const addEdge = (from, to, label = '', style = '') => {
-      const key = `${from}->${to}`;
-      if (!edgeMap.has(key)) {
-        edgeMap.set(key, new Set());
-      }
-      edgeMap.get(key).add(JSON.stringify({ label, style }));
-    };
-
-    for (const modType in modules) {
-      for (const mod of modules[modType]) {
-        const id = mod.moduleId?.[0];
-        const name = mod.moduleName?.[0] || modType;
-        if (!id) continue;
-
-        const displayName = name.replace(/"/g, '');
-        const tagLabel = modType;
-        idToLabel[id] = `${tagLabel}\\n${displayName}`;
-
-        (mod.ascendants || []).forEach(asc => {
-          if (typeof asc === 'string') addEdge(asc, id);
-        });
-
-        if (mod.singleDescendant?.[0]) {
-          addEdge(id, mod.singleDescendant[0]);
-        }
-
-        if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=2');
-        }
-
-        if (modType === 'ifElse') {
-          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-          for (const entry of entries) {
-            const key = entry.key?.[0];
-            const desc = entry.value?.[0]?.desc?.[0];
-            if (key && desc) {
-              addEdge(id, desc, key.toUpperCase());
-            }
-          }
-        }
 
         if (modType === 'case') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
