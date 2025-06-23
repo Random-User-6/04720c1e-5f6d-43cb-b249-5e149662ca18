@@ -350,6 +350,8 @@ for (const modType in allModules) {
 
 // Full IVR Module Parser with Dynamic Connection Handling
 
+// Full IVR Module Parser with Dynamic Connection Handling
+
 function parseModules(modules) {
   const edges = [];
 
@@ -383,15 +385,16 @@ function parseModules(modules) {
         break;
 
       case 'hangup':
-case 'incomingCall':
-  extractSingle(modId, data, edges);
-  extractException(modId, data, edges);
-  extractBranches(modId, data, edges);
-  break;
-
+      case 'incomingCall':
+        extractSingle(modId, data, edges);
+        extractException(modId, data, edges);
+        extractBranches(modId, data, edges);
+        break;
 
       default:
-        // Unknown or unsupported module type
+        extractSingle(modId, data, edges);
+        extractException(modId, data, edges);
+        extractBranches(modId, data, edges);
         break;
     }
   }
