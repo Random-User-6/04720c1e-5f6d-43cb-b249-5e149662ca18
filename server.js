@@ -204,7 +204,8 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
             const key = entry.key?.[0];
             const desc = entry.value?.[0]?.desc?.[0];
             if (key && desc) {
-              addEdge(id, desc, key.toUpperCase());
+              // addEdge(id, desc, key.toUpperCase());
+              addEdge(id, desc, key);
             }
           }
         }
