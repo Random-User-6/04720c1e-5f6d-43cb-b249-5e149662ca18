@@ -198,7 +198,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
           addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=2');
         }
 
-        if (modType === 'ifElse') {
+        if (modType === 'ifElse' || modType === 'answerMachine') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
             const key = entry.key?.[0];
