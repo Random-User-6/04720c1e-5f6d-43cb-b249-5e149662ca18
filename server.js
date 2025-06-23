@@ -209,7 +209,8 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
           }
         }
 
-        if (modType === 'case') {
+        // if (modType === 'case') {
+        if (modType === 'case' || modType === 'menu') {
           const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
           for (const entry of entries) {
             const names = entry.value?.[0]?.name || [];
