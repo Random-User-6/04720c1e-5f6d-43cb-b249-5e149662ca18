@@ -383,9 +383,12 @@ function parseModules(modules) {
         break;
 
       case 'hangup':
-      case 'incomingCall':
-        // No outbound connections
-        break;
+case 'incomingCall':
+  extractSingle(modId, data, edges);
+  extractException(modId, data, edges);
+  extractBranches(modId, data, edges);
+  break;
+
 
       default:
         // Unknown or unsupported module type
