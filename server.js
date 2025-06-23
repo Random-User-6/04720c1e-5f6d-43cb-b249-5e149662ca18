@@ -363,41 +363,39 @@ function parseModules(modules) {
     if (!modType || !modId) continue;
 
     switch (modType) {
-      case 'menu':
-      case 'case':
-        extractBranches(modId, data, edges);
-        break;
+  case 'menu':
+  case 'case':
+  case 'ifElse':
+  case 'getDigits':
+    extractBranches(modId, data, edges);
+    extractSingle(modId, data, edges);
+    extractException(modId, data, edges);
+    break;
 
-      case 'play':
-      case 'getDigits':
-      case 'recording':
-      case 'language':
-        extractSingle(modId, data, edges);
-        break;
+  case 'play':
+  case 'recording':
+  case 'language':
+    extractSingle(modId, data, edges);
+    extractException(modId, data, edges);
+    break;
 
-      case 'thirdPartyTransfer':
-      case 'voiceMailTransfer':
-      case 'agentTransfer':
-      case 'skillTransfer':
-      case 'conference':
-        extractSingle(modId, data, edges);
-        extractException(modId, data, edges);
-        break;
+  case 'thirdPartyTransfer':
+  case 'voiceMailTransfer':
+  case 'agentTransfer':
+  case 'skillTransfer':
+  case 'conference':
+    extractSingle(modId, data, edges);
+    extractException(modId, data, edges);
+    extractBranches(modId, data, edges);
+    break;
 
-      case 'hangup':
-      case 'incomingCall':
-        extractSingle(modId, data, edges);
-        extractException(modId, data, edges);
-        extractBranches(modId, data, edges);
-        break;
+  default:
+    extractSingle(modId, data, edges);
+    extractException(modId, data, edges);
+    extractBranches(modId, data, edges);
+    break;
+}
 
-      default:
-        extractSingle(modId, data, edges);
-        extractException(modId, data, edges);
-        extractBranches(modId, data, edges);
-        break;
-    }
-  }
 
   return edges;
 }
