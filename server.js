@@ -195,7 +195,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         }
 
         if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'EXCEPTION', 'color="red", fontcolor="red", style="dashed", penwidth=1');
+          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=1');
         }
 
         if (modType === 'ifElse' || modType === 'answerMachine') {
