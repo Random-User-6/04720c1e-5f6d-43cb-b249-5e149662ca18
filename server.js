@@ -271,7 +271,21 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   try {
     const result = await parseStringPromise(xml);
-    const modules = result.ivrScript?.modules?.[0]?.module || [];
+    // const modules = result.ivrScript?.modules?.[0]?.module || [];
+    const allModules = result.ivrScript.modules[0];
+const modules = [];
+
+for (const modType in allModules) {
+  for (const mod of allModules[modType]) {
+    mod.$ = {
+      id: mod.moduleId?.[0],
+      name: mod.moduleName?.[0],
+      modType
+    };
+    modules.push(mod);
+  }
+}
+
 
     const edges = parseModules(modules);
     const idToLabel = {};
