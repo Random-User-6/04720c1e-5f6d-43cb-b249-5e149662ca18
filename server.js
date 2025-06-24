@@ -220,7 +220,8 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         
             completed++;
             progressBar.value = completed;
-            progressText.textContent = "\${Math.round((completed / boxes.length) * 100)}%";
+            // progressText.textContent = "\${Math.round((completed / boxes.length) * 100)}%";
+            progressText.textContent = Math.round((completed / boxes.length) * 100) + "%";
           }
         
           // Optional: hide progress bar after completion
