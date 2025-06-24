@@ -62,10 +62,12 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         .file-list li { margin: 5px 0; }
       </style>
     </head>
-    <div id="progress-container" style="display: none; width: 80%; max-width: 500px; margin: 0 auto 20px;">
-      <label for="progress-bar" style="display:block; text-align:center; margin-bottom: 5px; color:#ffffff;">Download Progress</label>
-      <progress id="progress-bar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
-      <div id="progress-text" style="text-align:center; margin-top: 5px; color:#ffffff;">0%</div>
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+      <div id="progress-container" style="display: none; width: 100%; max-width: 500px; margin-bottom: 20px;">
+        <label for="progress-bar" style="margin-bottom: 5px; color:#ffffff;">Download Progress</label>
+        <progress id="progress-bar" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+        <div id="progress-text" style="margin-top: 5px; color:#ffffff;">0%</div>
+      </div>
     </div>
     
     <body>
