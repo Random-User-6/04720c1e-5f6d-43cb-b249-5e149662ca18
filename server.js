@@ -148,13 +148,13 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         //   }
         // }
 
-        // function selectAll() {
-        //   document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
-        // }
+        function selectAll() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
+        }
 
-        // function selectNone() {
-        //   document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
-        // }
+        function selectNone() {
+          document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
+        }
 
         async function downloadSelected(type) {
           const boxes = Array.from(document.querySelectorAll('.dl-check:checked'));
