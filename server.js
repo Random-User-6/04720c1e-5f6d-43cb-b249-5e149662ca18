@@ -54,8 +54,10 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       const baseName = `${file.originalname}_${timestamp}`;
       results.push({
         name: file.originalname,
-        base: baseName
+        base: baseName,
+        svgPath: `/${outputFilename}` // Don't include 'public/'
       });
+
 
     } catch (e) {
       console.error('Error in parseAndRenderXML:', e);
