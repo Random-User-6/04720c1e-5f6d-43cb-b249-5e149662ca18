@@ -113,54 +113,55 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         function selectAll() {
           document.querySelectorAll('.dl-check').forEach(box => box.checked = true);
         }
-
+      
         function selectNone() {
           document.querySelectorAll('.dl-check').forEach(box => box.checked = false);
         }
-
+      
         async function downloadSelected(type) {
           const boxes = Array.from(document.querySelectorAll('.dl-check:checked'));
           if (boxes.length === 0) return alert('No files selected.');
-        
+      
           const progressContainer = document.getElementById('progress-container');
           const progressBar = document.getElementById('progress-bar');
           const progressText = document.getElementById('progress-text');
-          
+      
           progressContainer.style.display = 'block';
           progressBar.value = 0;
           progressBar.max = boxes.length;
           progressText.textContent = '0%';
-        
+      
+          const mimeTypes = {
+            svg: 'image/svg+xml',
+            png: 'image/png',
+            mermaid: 'text/plain',
+            uml: 'text/plain'
+          };
+      
           let completed = 0;
-        
+      
           for (const box of boxes) {
-            const url = box.getAttribute('data-path');
-            // const filename = url.split('/').pop().replace(/\.svg$/, type === 'svg' ? '.svg' : '.png');
-            let filename = url.split('/').pop();
-              filename = filename.replace(/\.svg$/, {
-                svg: '.svg',
-                png: '.png',
-                mermaid: '.mmd',
-                uml: '.puml'
-              }[type] || '.txt');
-
+            const originalPath = box.getAttribute('data-path'); // e.g. /file.svg
+            const baseName = originalPath.replace(/\.\w+$/, ''); // remove extension
+            const ext = {
+              svg: 'svg',
+              png: 'png',
+              mermaid: 'mmd',
+              uml: 'puml'
+            }[type] || 'txt';
+      
+            const filePath = `${baseName}.${ext}`; // e.g. /file.mmd
+            const filename = filePath.split('/').pop();
+      
             try {
-              const res = await fetch(url);
+              const res = await fetch(filePath);
               const data = await res.text();
-        
-              if (type === 'svg') {
-                const blob = new Blob([data], { type: 'image/svg+xml' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              } else if (type === 'png') {
+      
+              if (type === 'png') {
                 const img = new Image();
                 const svgBlob = new Blob([data], { type: 'image/svg+xml' });
                 const urlObj = URL.createObjectURL(svgBlob);
-        
+      
                 await new Promise((resolve, reject) => {
                   img.onload = () => {
                     const canvas = document.createElement('canvas');
@@ -182,24 +183,31 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
                   img.onerror = reject;
                   img.src = urlObj;
                 });
+              } else {
+                const blob = new Blob([data], { type: mimeTypes[type] });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
               }
-        
+      
             } catch (err) {
               console.error('Download failed:', err);
             }
-        
+      
             completed++;
             progressBar.value = completed;
             progressText.textContent = Math.round((completed / boxes.length) * 100) + "%";
           }
-        
-          // Optional: hide progress bar after completion
+      
           setTimeout(() => {
             progressContainer.style.display = 'none';
           }, 1500);
         }
-
       </script>
+
     </body>
     </html>
   `;
