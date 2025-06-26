@@ -51,7 +51,12 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       const outputPath = `public/${outputFilename}`;
       await parseAndRenderXML(xml, outputPath, format);
 
-      results.push({ name: file.originalname, svgPath: `/${outputFilename}` });
+      const baseName = `${file.originalname}_${timestamp}`;
+      results.push({
+        name: file.originalname,
+        base: baseName
+      });
+
     } catch (e) {
       console.error('Error in parseAndRenderXML:', e);
       results.push({ name: file.originalname || file.filename, error: e.message });
@@ -100,7 +105,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
           }
           return `
             <li>
-              <input type="checkbox" class="dl-check" data-path="${result.svgPath}" />
+              <input type="checkbox" class="dl-check" data-base="${result.base}" />
               <a href="${result.svgPath}" target="_blank">${result.name}</a>
             </li>
           `;
@@ -142,15 +147,16 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       
           for (const box of boxes) {
             const originalPath = box.getAttribute('data-path'); // e.g. /file.svg
-            const baseName = originalPath.replace(/\.\w+$/, ''); // remove extension
+            const baseName = box.getAttribute('data-base'); // no extension
             const ext = {
               svg: 'svg',
               png: 'png',
               mermaid: 'mmd',
               uml: 'puml'
             }[type] || 'txt';
-      
-            const filePath = \`\${baseName}.\${ext}\`;
+            
+            const filePath = `/${baseName}.${ext}`;
+
             const filename = filePath.split('/').pop();
       
             try {
