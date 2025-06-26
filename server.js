@@ -136,7 +136,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
           for (const box of boxes) {
             const baseName = box.getAttribute('data-base');
             const ext = { svg: 'svg', png: 'svg', mermaid: 'mmd', uml: 'puml' }[type] || 'txt';
-            const filePath = `/${baseName}.${ext}`;
+            var filePath = '/' + baseName + '.' + ext;
             const filename = `${baseName}.${type === 'png' ? 'png' : ext}`;
 
             try {
