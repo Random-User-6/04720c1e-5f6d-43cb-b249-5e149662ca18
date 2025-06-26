@@ -137,7 +137,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
             const baseName = box.getAttribute('data-base');
             const ext = { svg: 'svg', png: 'svg', mermaid: 'mmd', uml: 'puml' }[type] || 'txt';
             var filePath = '/' + baseName + '.' + ext;
-            const filename = `${baseName}.${type === 'png' ? 'png' : ext}`;
+            const filename = baseName + '.' + (type === 'png' ? 'png' : ext);
 
             try {
               const res = await fetch(filePath);
