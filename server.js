@@ -155,7 +155,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
               uml: 'puml'
             }[type] || 'txt';
             
-            const filePath = `/${baseName}.${ext}`;
+            const filePath = \`/\${baseName}.\${ext}\`;
 
             const filename = filePath.split('/').pop();
       
