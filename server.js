@@ -70,6 +70,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     </head>
     <body>
       <h1>Processed Files</h1>
+      <link rel="stylesheet" href="/styles.css">
       <div>
         <button onclick="selectAll()">Select All</button>
         <button onclick="selectNone()">Select None</button>
