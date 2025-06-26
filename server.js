@@ -32,7 +32,6 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 
   for (const file of req.files) {
     try {
-      console.log("Processing file:", file.originalname);
       const xml = fs.readFileSync(file.path, 'utf8');
       const timestamp = new Date().toISOString().replace(/:/g, '-').replace(/\..+/, '');
       const baseName = `${file.originalname}_${timestamp}`;
@@ -58,14 +57,12 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
     }
   }
 
-  // HTML response with checkboxes + download buttons
   let html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
       <title>Processed Files</title>
-      <link rel="stylesheet" href="/styles.css">
       <style>
         .file-list { list-style-type: none; padding-left: 0; }
         .file-list li { margin: 5px 0; }
@@ -139,8 +136,8 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
           for (const box of boxes) {
             const baseName = box.getAttribute('data-base');
             const ext = { svg: 'svg', png: 'svg', mermaid: 'mmd', uml: 'puml' }[type] || 'txt';
-            const filePath = \`/\${baseName}.\${ext}\`;
-            const filename = \`\${baseName}.\${type === 'png' ? 'png' : ext}\`;
+            const filePath = `/${baseName}.${ext}`;
+            const filename = `${baseName}.${type === 'png' ? 'png' : ext}`;
 
             try {
               const res = await fetch(filePath);
@@ -203,126 +200,118 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
 });
 
 async function parseAndRenderXML(xml, outputPath, format = 'svg') {
-  try {
-    const result = await parseStringPromise(xml);
-    if (!result?.ivrScript?.modules?.[0]) {
-      throw new Error("Invalid or unsupported IVR XML structure: 'ivrScript.modules[0]' missing");
-    }
-    const modules = result.ivrScript.modules[0];
-    const idToLabel = {};
-    const edgeMap = new Map();
+  const result = await parseStringPromise(xml);
+  if (!result?.ivrScript?.modules?.[0]) {
+    throw new Error("Invalid or unsupported IVR XML structure: 'ivrScript.modules[0]' missing");
+  }
+  const modules = result.ivrScript.modules[0];
+  const idToLabel = {};
+  const edgeMap = new Map();
 
-    const addEdge = (from, to, label = '', style = '') => {
-      const key = \`\${from}->\${to}\`;
-      if (!edgeMap.has(key)) edgeMap.set(key, new Set());
-      edgeMap.get(key).add(JSON.stringify({ label, style }));
-    };
+  const addEdge = (from, to, label = '', style = '') => {
+    const key = `${from}->${to}`;
+    if (!edgeMap.has(key)) edgeMap.set(key, new Set());
+    edgeMap.get(key).add(JSON.stringify({ label, style }));
+  };
 
-    for (const modType in modules) {
-      for (const mod of modules[modType]) {
-        const id = mod.moduleId?.[0];
-        const name = mod.moduleName?.[0] || modType;
-        if (!id) continue;
-        const displayName = name.replace(/"/g, '');
-        idToLabel[id] = \`\${modType}\\n\${displayName}\`;
+  for (const modType in modules) {
+    for (const mod of modules[modType]) {
+      const id = mod.moduleId?.[0];
+      const name = mod.moduleName?.[0] || modType;
+      if (!id) continue;
+      const displayName = name.replace(/"/g, '');
+      idToLabel[id] = `${modType}\\n${displayName}`;
 
-        (mod.ascendants || []).forEach(asc => {
-          if (typeof asc === 'string') addEdge(asc, id);
-        });
+      (mod.ascendants || []).forEach(asc => {
+        if (typeof asc === 'string') addEdge(asc, id);
+      });
 
-        if (mod.singleDescendant?.[0]) {
-          addEdge(id, mod.singleDescendant[0]);
+      if (mod.singleDescendant?.[0]) addEdge(id, mod.singleDescendant[0]);
+      if (mod.exceptionalDescendant?.[0]) {
+        addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=1');
+      }
+
+      if (modType === 'ifElse' || modType === 'answerMachine') {
+        const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+        for (const entry of entries) {
+          const key = entry.key?.[0];
+          const desc = entry.value?.[0]?.desc?.[0];
+          if (key && desc) addEdge(id, desc, key);
         }
+      }
 
-        if (mod.exceptionalDescendant?.[0]) {
-          addEdge(id, mod.exceptionalDescendant[0], 'Exception', 'color="red", fontcolor="red", style="dashed", penwidth=1');
-        }
-
-        if (modType === 'ifElse' || modType === 'answerMachine') {
-          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-          for (const entry of entries) {
-            const key = entry.key?.[0];
-            const desc = entry.value?.[0]?.desc?.[0];
-            if (key && desc) addEdge(id, desc, key);
-          }
-        }
-
-        if (modType === 'case' || modType === 'menu') {
-          const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
-          for (const entry of entries) {
-            const names = entry.value?.[0]?.name || [];
-            const descs = entry.value?.[0]?.desc || [];
-            for (let i = 0; i < descs.length; i++) {
-              const label = names[i] || names[0] || '';
-              const desc = descs[i];
-              if (label && desc) addEdge(id, desc, label);
-            }
+      if (modType === 'case' || modType === 'menu') {
+        const entries = mod.data?.[0]?.branches?.[0]?.entry || [];
+        for (const entry of entries) {
+          const names = entry.value?.[0]?.name || [];
+          const descs = entry.value?.[0]?.desc || [];
+          for (let i = 0; i < descs.length; i++) {
+            const label = names[i] || names[0] || '';
+            const desc = descs[i];
+            if (label && desc) addEdge(id, desc, label);
           }
         }
       }
     }
+  }
 
-    if (format === 'svg' || format === 'dot') {
-      let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
-      for (const [id, label] of Object.entries(idToLabel)) {
-        dot += \`  "\${id}" [label="\${label.replace(/"/g, '\\"')}"];\n\`;
-      }
-      for (const [key, valueSet] of edgeMap.entries()) {
-        const [from, to] = key.split('->');
-        const labels = [];
-        const styles = new Set();
-        for (const item of valueSet) {
-          const { label, style } = JSON.parse(item);
-          if (label) labels.push(label);
-          if (style) styles.add(style);
-        }
-        const attrString = [
-          labels.length ? \`label="\${labels.join(' / ')}"\` : '',
-          ...styles
-        ].filter(Boolean).join(', ');
-        dot += \`  "\${from}" -> "\${to}"\${attrString ? \` [\${attrString}]\` : ''};\n\`;
-      }
-      dot += '}';
-      if (format === 'dot') fs.writeFileSync(outputPath, dot, 'utf8');
-      else fs.writeFileSync(outputPath, await vizInstance.renderString(dot), 'utf8');
-    } else if (format === 'mermaid') {
-      let mermaid = 'graph TD\n';
-      for (const [id, label] of Object.entries(idToLabel)) {
-        mermaid += \`  \${id}["\${label.replace(/"/g, '')}"]\n\`;
-      }
-      for (const [key, valueSet] of edgeMap.entries()) {
-        const [from, to] = key.split('->');
-        const labels = [];
-        for (const item of valueSet) {
-          const { label } = JSON.parse(item);
-          if (label) labels.push(label);
-        }
-        mermaid += \`  \${from} -->\${labels.length ? \`|\${labels.join(' / ')}|\` : ''} \${to}\n\`;
-      }
-      fs.writeFileSync(outputPath, mermaid, 'utf8');
-    } else if (format === 'uml') {
-      let uml = '@startuml\n';
-      for (const [id, label] of Object.entries(idToLabel)) {
-        uml += \`state "\${label.replace(/"/g, '')}" as \${id}\n\`;
-      }
-      for (const [key, valueSet] of edgeMap.entries()) {
-        const [from, to] = key.split('->');
-        const labels = [];
-        for (const item of valueSet) {
-          const { label } = JSON.parse(item);
-          if (label) labels.push(label);
-        }
-        uml += \`\${from} --> \${to}\${labels.length ? \` : \${labels.join(' / ')}\` : ''}\n\`;
-      }
-      uml += '@enduml';
-      fs.writeFileSync(outputPath, uml, 'utf8');
-    } else {
-      throw new Error('Unsupported format: ' + format);
+  if (format === 'svg' || format === 'dot') {
+    let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+    for (const [id, label] of Object.entries(idToLabel)) {
+      dot += `  "${id}" [label="${label.replace(/"/g, '\\"')}"];\n`;
     }
-  } catch (err) {
-    console.error("parseAndRenderXML failed:", err);
-    throw err;
+    for (const [key, valueSet] of edgeMap.entries()) {
+      const [from, to] = key.split('->');
+      const labels = [];
+      const styles = new Set();
+      for (const item of valueSet) {
+        const { label, style } = JSON.parse(item);
+        if (label) labels.push(label);
+        if (style) styles.add(style);
+      }
+      const attrString = [
+        labels.length ? `label="${labels.join(' / ')}"` : '',
+        ...styles
+      ].filter(Boolean).join(', ');
+      dot += `  "${from}" -> "${to}"${attrString ? ` [${attrString}]` : ''};\n`;
+    }
+    dot += '}';
+    if (format === 'dot') fs.writeFileSync(outputPath, dot, 'utf8');
+    else fs.writeFileSync(outputPath, await vizInstance.renderString(dot), 'utf8');
+  } else if (format === 'mermaid') {
+    let mermaid = 'graph TD\n';
+    for (const [id, label] of Object.entries(idToLabel)) {
+      mermaid += `  ${id}["${label.replace(/"/g, '')}"]\n`;
+    }
+    for (const [key, valueSet] of edgeMap.entries()) {
+      const [from, to] = key.split('->');
+      const labels = [];
+      for (const item of valueSet) {
+        const { label } = JSON.parse(item);
+        if (label) labels.push(label);
+      }
+      mermaid += `  ${from} -->${labels.length ? `|${labels.join(' / ')}|` : ''} ${to}\n`;
+    }
+    fs.writeFileSync(outputPath, mermaid, 'utf8');
+  } else if (format === 'uml') {
+    let uml = '@startuml\n';
+    for (const [id, label] of Object.entries(idToLabel)) {
+      uml += `state "${label.replace(/"/g, '')}" as ${id}\n`;
+    }
+    for (const [key, valueSet] of edgeMap.entries()) {
+      const [from, to] = key.split('->');
+      const labels = [];
+      for (const item of valueSet) {
+        const { label } = JSON.parse(item);
+        if (label) labels.push(label);
+      }
+      uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
+    }
+    uml += '@enduml';
+    fs.writeFileSync(outputPath, uml, 'utf8');
+  } else {
+    throw new Error('Unsupported format: ' + format);
   }
 }
 
-app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
