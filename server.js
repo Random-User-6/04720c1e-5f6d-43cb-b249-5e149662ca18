@@ -282,7 +282,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   } else if (format === 'mermaid') {
     let mermaid = 'graph TD\n';
     for (const [id, label] of Object.entries(idToLabel)) {
-      mermaid += `  ${id}["${label.replace(/\\n/g, '&#10;').replace(/"/g, '')}"]\n`;
+      mermaid += `  ${id}["${label.replace(/\\n/g, '<br>').replace(/"/g, '')}"]\n`;
     }
     for (const [key, valueSet] of edgeMap.entries()) {
       const [from, to] = key.split('->');
