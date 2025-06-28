@@ -317,10 +317,17 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
       uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
     }
     uml += '@enduml';
-    fs.writeFileSync(outputPath, uml, 'utf8');
+    const cleanUml = uml.replace(/^\uFEFF/, '').trimStart();
+    fs.writeFileSync(outputPath, cleanUml, 'utf8');
+    // fs.writeFileSync(outputPath, uml, 'utf8');
   } else {
     throw new Error('Unsupported format: ' + format);
   }
+}
+
+// Remove BOM and leading whitespace from PlantUML string
+function sanitizePlantUML(input) {
+  return input.replace(/^\uFEFF/, '').trimStart();
 }
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
