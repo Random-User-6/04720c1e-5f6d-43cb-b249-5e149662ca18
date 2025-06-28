@@ -306,28 +306,43 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     let uml = '@startuml\n';
     uml += 'hide empty description\n';
     uml += 'scale 0.85\n';
+      // Build map of original GUID -> safe label ID
+    const idToSafeId = {};
     for (const [id, label] of Object.entries(idToLabel)) {
-      // uml += `state "${label.replace(/"/g, '')}" as ${id}\n`;
-      const safeLabelId = displayName.replace(/[^\w\d_]/g, '_'); // Replace unsafe characters
-      idToLabel[safeLabelId] = `${modType}\\n${displayName}`;    // Update label map
-      uml += `state "${modType}\\n${displayName}" as ${safeLabelId}\n`;
+      // Extract last line of label for ID (usually has unique readable info)
+      const displayName = label.split('\\n').pop();
+      // Replace unsafe characters with underscores
+      let safeId = displayName.replace(/[^\w\d]/g, '_');
+  
+      // Ensure uniqueness (fallback to ID if needed)
+      if (idToSafeId[safeId]) {
+        safeId = safeId + '_' + id.slice(0, 4); // Append part of GUID to disambiguate
+      }
+  
+      idToSafeId[id] = safeId;
+  
+      uml += `state "${label.replace(/"/g, '')}" as ${safeId}\n`;
     }
+  
     for (const [key, valueSet] of edgeMap.entries()) {
-      const [from, to] = key.split('->');
+      const [fromId, toId] = key.split('->');
+      const from = idToSafeId[fromId] || fromId.replace(/[^\w\d]/g, '_');
+      const to = idToSafeId[toId] || toId.replace(/[^\w\d]/g, '_');
+  
       const labels = [];
       for (const item of valueSet) {
         const { label } = JSON.parse(item);
         if (label) labels.push(label);
       }
-      // uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
-      const from = safeFromId;
-      const to = safeToId;
-      uml += `${from} --> ${to}${label ? ` : ${label}` : ''}\n`;
+  
+      uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
     }
+  
     uml += '@enduml';
+  
+    // Strip BOM and write the clean file
     const cleanUml = uml.replace(/^\uFEFF/, '').trimStart();
     fs.writeFileSync(outputPath, cleanUml, 'utf8');
-    // fs.writeFileSync(outputPath, uml, 'utf8');
   } else {
     throw new Error('Unsupported format: ' + format);
   }
