@@ -291,7 +291,12 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         const { label } = JSON.parse(item);
         if (label) labels.push(label);
       }
-      mermaid += `  ${from} -->${labels.length ? `|${labels.join(' / ')}|` : ''} ${to}\n`;
+      if (labels.length) {
+        const escapedLabel = '`' + labels.join(' / ').replace(/`/g, '\\`') + '`';
+        mermaid += `  ${from} -->|${escapedLabel}| ${to}\n`;
+      } else {
+        mermaid += `  ${from} --> ${to}\n`;
+      }
     }
     fs.writeFileSync(outputPath, mermaid, 'utf8');
   } else if (format === 'uml') {
