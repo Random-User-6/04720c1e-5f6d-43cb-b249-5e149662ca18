@@ -200,6 +200,24 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
           }, 1500);
         }
       </script>
+      <script>
+        window.addEventListener('load', () => {
+          const listItems = document.querySelectorAll('#results-list li');
+          listItems.forEach((li, index) => {
+            setTimeout(() => {
+              const iconSpan = li.querySelector('.status-icon');
+              if (!iconSpan) return;
+              iconSpan.classList.remove('spinner');
+      
+              if (li.dataset.status === 'ok') {
+                iconSpan.classList.add('icon-success');
+              } else {
+                iconSpan.classList.add('icon-error');
+              }
+            }, 300 + index * 120); // slightly staggered transition
+          });
+        });
+      </script>
     </body>
     </html>
   `;
