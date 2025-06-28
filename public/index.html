@@ -14,9 +14,24 @@
   <form action="/upload" method="POST" enctype="multipart/form-data">
   <label class="file-button">
     Choose Files
-    <input type="file" name="ivrfiles" multiple required hidden />
+    <input type="file" name="ivrfiles" multiple required hidden onchange="updateFileList(this)" />
   </label>
+  <span id="file-list" class="file-list-label">No files selected</span>
+  <br />
   <button type="submit">Upload and Process</button>
 </form>
+<script>
+  function updateFileList(input) {
+    const listSpan = document.getElementById('file-list');
+    const files = input.files;
+    if (!files.length) {
+      listSpan.textContent = 'No files selected';
+    } else if (files.length === 1) {
+      listSpan.textContent = `1 file selected: ${files[0].name}`;
+    } else {
+      listSpan.textContent = `${files.length} files selected`;
+    }
+  }
+</script>
 </body>
 </html>
