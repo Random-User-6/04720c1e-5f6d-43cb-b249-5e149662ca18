@@ -280,29 +280,47 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     if (format === 'dot') fs.writeFileSync(outputPath, dot, 'utf8');
     else fs.writeFileSync(outputPath, await vizInstance.renderString(dot), 'utf8');
   } else if (format === 'mermaid') {
-    let mermaid = 'graph TD\n';
-    for (const [id, label] of Object.entries(idToLabel)) {
-      mermaid += `  ${id}["${label.replace(/\\n/g, '<br>').replace(/"/g, '')}"]\n`;
+  let mermaid = 'graph TD\n';
+
+  // Build readable ID mapping (like in UML)
+  const idToSafeId = {};
+  for (const [id, label] of Object.entries(idToLabel)) {
+    const displayName = label.split('\\n').pop(); // Take the last line
+    let safeId = displayName.replace(/[^\w\d]/g, '_');
+
+    // Ensure uniqueness
+    if (idToSafeId[safeId]) {
+      safeId = safeId + '_' + id.slice(0, 4);
     }
-    for (const [key, valueSet] of edgeMap.entries()) {
-      const [from, to] = key.split('->');
-      const labels = [];
-      for (const item of valueSet) {
-        const { label } = JSON.parse(item);
-        if (label) labels.push(label);
-      }
-      if (labels.length) {
-        const escapedLabel = labels
-          .join(' / ')
-          .replace(/\|/g, '∣')
-          .replace(/`/g, '\'');
-        mermaid += `  ${from} -->|${escapedLabel}| ${to}\n`;
-      } else {
-        mermaid += `  ${from} --> ${to}\n`;
-      }
+
+    idToSafeId[id] = safeId;
+
+    const cleanLabel = label.replace(/\\n/g, '<br>').replace(/"/g, '');
+    mermaid += `  ${safeId}["${cleanLabel}"]\n`;
+  }
+
+  for (const [key, valueSet] of edgeMap.entries()) {
+    const [fromId, toId] = key.split('->');
+    const from = idToSafeId[fromId] || fromId.replace(/[^\w\d]/g, '_');
+    const to = idToSafeId[toId] || toId.replace(/[^\w\d]/g, '_');
+
+    const labels = [];
+    for (const item of valueSet) {
+      const { label } = JSON.parse(item);
+      if (label) labels.push(label);
     }
-    fs.writeFileSync(outputPath, mermaid, 'utf8');
-  } else if (format === 'uml') {
+
+    if (labels.length) {
+      const escapedLabel = labels.join(' / ').replace(/\|/g, '∣').replace(/`/g, "'");
+      mermaid += `  ${from} -->|${escapedLabel}| ${to}\n`;
+    } else {
+      mermaid += `  ${from} --> ${to}\n`;
+    }
+  }
+
+  fs.writeFileSync(outputPath, mermaid, 'utf8');
+}
+ else if (format === 'uml') {
     let uml = '@startuml\n';
     uml += 'hide empty description\n';
     uml += 'scale 0.85\n';
