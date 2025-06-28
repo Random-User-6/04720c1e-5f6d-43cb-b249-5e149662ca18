@@ -292,7 +292,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         if (label) labels.push(label);
       }
       if (labels.length) {
-        const escapedLabel = '`' + labels.join(' / ').replace(/`/g, '\\`') + '`';
+        const escapedLabel = '`' + labels
+          .join(' / ')
+          .replace(/\|/g, '∣')  // Replace pipe with Unicode vertical bar
+          .replace(/`/g, '\\`') + '`';
         mermaid += `  ${from} -->|${escapedLabel}| ${to}\n`;
       } else {
         mermaid += `  ${from} --> ${to}\n`;
