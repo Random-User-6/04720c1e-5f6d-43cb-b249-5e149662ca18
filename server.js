@@ -305,7 +305,7 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
   } else if (format === 'uml') {
     let uml = '@startuml\n';
     uml += 'hide empty description\n';
-    uml += 'scale 0.85';
+    uml += 'scale 0.85\n';
     for (const [id, label] of Object.entries(idToLabel)) {
       uml += `state "${label.replace(/"/g, '')}" as ${id}\n`;
     }
