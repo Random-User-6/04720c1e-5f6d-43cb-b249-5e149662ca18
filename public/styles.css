@@ -73,6 +73,21 @@ li {
   margin-bottom: 0.5em;
 }
 
+.file-button {
+  display: inline-block;
+  padding: 0.6em 1em;
+  font-size: 1em;
+  background-color: #336699;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.file-button:hover {
+  background-color: #4477aa;
+}
+
 progress {
   appearance: none;
   width: 100%;
