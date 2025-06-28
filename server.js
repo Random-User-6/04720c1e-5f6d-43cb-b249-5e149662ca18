@@ -307,7 +307,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     uml += 'hide empty description\n';
     uml += 'scale 0.85\n';
     for (const [id, label] of Object.entries(idToLabel)) {
-      uml += `state "${label.replace(/"/g, '')}" as ${id}\n`;
+      // uml += `state "${label.replace(/"/g, '')}" as ${id}\n`;
+      const safeLabelId = displayName.replace(/[^\w\d_]/g, '_'); // Replace unsafe characters
+      idToLabel[safeLabelId] = `${modType}\\n${displayName}`;    // Update label map
+      uml += `state "${modType}\\n${displayName}" as ${safeLabelId}\n`;
     }
     for (const [key, valueSet] of edgeMap.entries()) {
       const [from, to] = key.split('->');
@@ -316,7 +319,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
         const { label } = JSON.parse(item);
         if (label) labels.push(label);
       }
-      uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
+      // uml += `${from} --> ${to}${labels.length ? ` : ${labels.join(' / ')}` : ''}\n`;
+      const from = safeFromId;
+      const to = safeToId;
+      uml += `${from} --> ${to}${label ? ` : ${label}` : ''}\n`;
     }
     uml += '@enduml';
     const cleanUml = uml.replace(/^\uFEFF/, '').trimStart();
