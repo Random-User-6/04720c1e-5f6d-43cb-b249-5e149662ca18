@@ -1,3 +1,4 @@
+gold before spinner
 // Required packages:
 // npm install express multer xml2js viz.js
 
@@ -81,23 +82,17 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
         <button onclick="downloadSelected('mermaid')">Download Selected as Mermaid</button>
         <button onclick="downloadSelected('uml')">Download Selected as UML</button>
       </div>
-      <ul class="file-list" id="results-list">
-        ${results.map((result, idx) => {
-          const id = `file-status-${idx}`;
+      <ul class="file-list">
+        ${results.map(result => {
           if (result.error) {
-            return `
-              <li id="${id}" data-status="error">
-                ${result.name}: Error - ${result.error}
-                <span class="status-icon spinner"></span>
-              </li>`;
-          } else {
-            return `
-              <li id="${id}" data-status="ok">
-                <input type="checkbox" class="dl-check" data-base="${result.base}" />
-                <a href="${result.svgPath}" target="_blank">${result.name}</a>
-                <span class="status-icon spinner"></span>
-              </li>`;
+            return `<li>${result.name}: Error - ${result.error}</li>`;
           }
+          return `
+            <li>
+              <input type="checkbox" class="dl-check" data-base="${result.base}" />
+              <a href="${result.svgPath}" target="_blank">${result.name}</a>
+            </li>
+          `;
         }).join('')}
       </ul>
       <form action="/" method="get">
