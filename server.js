@@ -25,6 +25,7 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   const results = [];
+  const includeFilename = req.body.includeFilename === '1';
 
   if (!req.files || !Array.isArray(req.files)) {
     return res.send("Error - No files uploaded or multer failed to parse 'ivrfiles'.");
@@ -110,7 +111,7 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
   res.send(html);
 });
 
-async function parseAndRenderXML(xml, outputPath, format = 'svg') {
+async function parseAndRenderXML(xml, outputPath, format = 'svg', filename = '', includeFilename = false) {
   const result = await parseStringPromise(xml);
   if (!result?.ivrScript?.modules?.[0]) {
     throw new Error("Invalid or unsupported IVR XML structure: 'ivrScript.modules[0]' missing");
@@ -168,6 +169,12 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
 
   if (format === 'svg' || format === 'dot') {
     let dot = 'digraph G {\n  node [shape=box, style=filled, fillcolor="#f9f9f9", fontname="Arial"];\n';
+
+    if (includeFilename && filename) {
+      dot += `  "fileLabel" [label="${filename}", shape=plaintext, fontcolor=gray, fontsize=12, margin=0];\n`;
+      dot += `  "fileLabel" -> "${Object.keys(idToLabel)[0]}" [style=invis];\n`; // invisible link to anchor it
+    }
+
     for (const [id, label] of Object.entries(idToLabel)) {
       dot += `  "${id}" [label="${label.replace(/"/g, '\\"')}"];\n`;
     }
@@ -191,6 +198,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     else fs.writeFileSync(outputPath, await vizInstance.renderString(dot), 'utf8');
   } else if (format === 'mermaid') {
   let mermaid = 'graph TD\n';
+    if (includeFilename && filename) {
+      mermaid += `  classDef fileLabel fill=white,stroke=white,color=gray,font-size:10px;\n`;
+      mermaid += `  fileLabel["${filename}"]:::fileLabel\n`;
+    }
 
   // Build readable ID mapping (like in UML)
   const idToSafeId = {};
@@ -234,6 +245,9 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg') {
     let uml = '@startuml\n';
     uml += 'hide empty description\n';
     uml += 'scale 0.85\n';
+    if (includeFilename && filename) {
+      uml += `note top of\n${filename}\nend note\n`;
+    }
       // Build map of original GUID -> safe label ID
     const idToSafeId = {};
     for (const [id, label] of Object.entries(idToLabel)) {
