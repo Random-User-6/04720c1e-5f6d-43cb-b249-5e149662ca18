@@ -41,7 +41,8 @@ app.post('/upload', upload.array('ivrfiles'), async (req, res) => {
       for (const fmt of formats) {
         const ext = fmt === 'mermaid' ? 'mmd' : fmt === 'uml' ? 'puml' : fmt;
         const outPath = `public/${baseName}.${ext}`;
-        await parseAndRenderXML(xml, outPath, fmt);
+        await parseAndRenderXML(xml, outPath, fmt, file.originalname, includeFilename);
+
       }
 
       results.push({
