@@ -199,10 +199,10 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg', filename = '',
     else fs.writeFileSync(outputPath, await vizInstance.renderString(dot), 'utf8');
   } else if (format === 'mermaid') {
   let mermaid = 'graph TD\n';
-    if (includeFilename && filename) {
-      mermaid += `  classDef fileLabel fill=white,stroke=white,color=gray,font-size:10px;\n`;
-      mermaid += `  fileLabel["${filename}"]:::fileLabel\n`;
-    }
+    // if (includeFilename && filename) {
+    //   mermaid += `  classDef fileLabel fill=white,stroke=white,color=gray,font-size:10px;\n`;
+    //   mermaid += `  fileLabel["${filename}"]:::fileLabel\n`;
+    // }
 
   // Build readable ID mapping (like in UML)
   const idToSafeId = {};
@@ -246,9 +246,9 @@ async function parseAndRenderXML(xml, outputPath, format = 'svg', filename = '',
     let uml = '@startuml\n';
     uml += 'hide empty description\n';
     uml += 'scale 0.85\n';
-    if (includeFilename && filename) {
-      uml += `note top of\n${filename}\nend note\n`;
-    }
+    // if (includeFilename && filename) {
+    //   uml += `note top of\n${filename}\nend note\n`;
+    // }
       // Build map of original GUID -> safe label ID
     const idToSafeId = {};
     for (const [id, label] of Object.entries(idToLabel)) {
